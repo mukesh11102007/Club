@@ -124,18 +124,18 @@ const exportPdfBtn = document.getElementById('export-pdf-btn');
 // ==========================================
 async function initDatabase() {
   try {
-    const res = await fetch('http://localhost:3000/api/clubs');
+    const res = await fetch('https://club2-di9s.onrender.com/api/clubs');
     let data = await res.json();
     
     if (!data || data.length === 0) {
       // Seed backend
-      const seedRes = await fetch('http://localhost:3000/api/clubs/seed', {
+      const seedRes = await fetch('https://club2-di9s.onrender.com/api/clubs/seed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(CLUBS_DATA.map(club => ({ ...club, slotsRemaining: MAX_SLOTS })))
       });
       if (seedRes.ok) {
-        const fetchRes = await fetch('http://localhost:3000/api/clubs');
+        const fetchRes = await fetch('https://club2-di9s.onrender.com/api/clubs');
         data = await fetchRes.json();
       }
     }
@@ -740,7 +740,7 @@ async function executeTransaction(details) {
   };
 
   try {
-    const res = await fetch('http://localhost:3000/api/bookings', {
+    const res = await fetch('https://club2-di9s.onrender.com/api/bookings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newBooking)
@@ -1039,7 +1039,7 @@ async function renderAdminDashboard() {
   adminTableBody.closest('.table-responsive-wrapper').style.display = '';
 
   try {
-    const res = await fetch('http://localhost:3000/api/bookings');
+    const res = await fetch('https://club2-di9s.onrender.com/api/bookings');
     if (!res.ok) throw new Error('Response not ok');
     bookingsState = await res.json();
   } catch (error) {
@@ -1112,7 +1112,7 @@ async function renderStaffAttendance() {
   // Fetch bookings for this club
   let bookings = [];
   try {
-    const res = await fetch('http://localhost:3000/api/bookings');
+    const res = await fetch('https://club2-di9s.onrender.com/api/bookings');
     const all = await res.json();
     bookings = all.filter(b => b.clubId === clubId);
   } catch (e) {
@@ -1130,7 +1130,7 @@ async function renderStaffAttendance() {
   // Fetch all attendance records for this club
   let allAttendance = [];
   try {
-    const res = await fetch(`http://localhost:3000/api/attendance/${clubId}`);
+    const res = await fetch(`https://club2-di9s.onrender.com/api/attendance/${clubId}`);
     allAttendance = await res.json();
   } catch (e) {
     console.warn('Could not fetch attendance records:', e);
@@ -1213,7 +1213,7 @@ async function renderStaffAttendance() {
         const name = btn.dataset.name;
         const status = btn.dataset.status;
         try {
-          await fetch('http://localhost:3000/api/attendance', {
+          await fetch('https://club2-di9s.onrender.com/api/attendance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ clubId, studentEmail: email, studentName: name, date: selectedDate, status })
@@ -1337,7 +1337,7 @@ function renderAdminTable() {
       if(b) { 
         b.attendance = checked; 
         try {
-          await fetch(`http://localhost:3000/api/bookings/${bId}/attendance`, {
+          await fetch(`https://club2-di9s.onrender.com/api/bookings/${bId}/attendance`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ attendance: checked })
@@ -1354,7 +1354,7 @@ function renderAdminTable() {
       btn.addEventListener('click', async () => {
         const bookingId = btn.getAttribute('data-booking-id');
         try {
-          const res = await fetch(`http://localhost:3000/api/bookings/${bookingId}`, {
+          const res = await fetch(`https://club2-di9s.onrender.com/api/bookings/${bookingId}`, {
             method: 'DELETE'
           });
           if (res.ok) {
@@ -1378,7 +1378,7 @@ async function renderAdminReportsList() {
   reportsTableBody.innerHTML = '';
   
   try {
-    const res = await fetch('http://localhost:3000/api/reports');
+    const res = await fetch('https://club2-di9s.onrender.com/api/reports');
     if (!res.ok) throw new Error('Failed to fetch reports');
     const reports = await res.json();
     
@@ -1410,7 +1410,7 @@ async function renderAdminReportsList() {
           <span style="color: var(--text-secondary); font-size: 0.9rem;">${date}</span>
         </td>
         <td>
-          <a href="http://localhost:3000${report.filePath}" download="${escapeHtml(report.fileName)}" class="btn btn-outline btn-sm" target="_blank">
+          <a href="https://club2-di9s.onrender.com${report.filePath}" download="${escapeHtml(report.fileName)}" class="btn btn-outline btn-sm" target="_blank">
             <i class="fa-solid fa-download"></i> Download
           </a>
         </td>
@@ -1452,7 +1452,7 @@ async function handleReportUpload(e) {
   if (loaderDesc) loaderDesc.textContent = 'Storing file on server...';
   
   try {
-    const res = await fetch('http://localhost:3000/api/reports', {
+    const res = await fetch('https://club2-di9s.onrender.com/api/reports', {
       method: 'POST',
       body: formData
     });
