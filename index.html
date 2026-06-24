@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/src/style.css">
+    <!-- Google Fonts: Outfit (For Headings) and Inter (For Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <!-- App Container -->
+    <div class="app-container">
+      
+      <!-- Top Navigation Bar -->
+      <header class="navbar">
+        <div class="navbar-brand" id="nav-brand-logo">
+          <div class="logo-icon">
+            <i class="fa-solid fa-ticket-simple"></i>
+          </div>
+          <span class="logo-text">Club<span>Sphere</span></span>
+        </div>
+        
+        <!-- Search and Filters bar in Navbar -->
+        <div class="navbar-actions">
+          <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="search-input" placeholder="Search clubs by name or keywords..." />
+            <button id="search-clear-btn" class="search-clear-btn" style="display: none;">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          
+          <div class="filter-wrapper">
+            <i class="fa-solid fa-filter filter-icon"></i>
+            <select id="category-filter">
+              <option value="All">All Categories</option>
+              <option value="Technical">Technology</option>
+              <option value="Cultural & Arts">Cultural & Arts</option>
+              <option value="Social Service">Social Service</option>
+              <option value="Hobbies & Adventure">Hobbies & Adventure</option>
+              <option value="Professional & Academic">Professional & Academic</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Concurrency & Authentication Navigation Area -->
+        <div class="nav-control-buttons">
+          <button id="concurrency-toggle-btn" class="btn btn-outline btn-sm">
+            <i class="fa-solid fa-bolt-lightning"></i> Concurrency Control
+          </button>
+          
+          <div class="nav-auth-container" id="nav-auth-container">
+            <!-- Default (Logged Out) State -->
+            <div class="auth-logged-out" id="auth-logged-out">
+              <button id="nav-login-btn" class="btn btn-outline btn-sm">
+                <i class="fa-solid fa-lock"></i> Admin Portal
+              </button>
+            </div>
+            <!-- Logged In State -->
+            <div class="auth-logged-in" id="auth-logged-in" style="display: none;">
+              <div class="user-profile-trigger" id="user-profile-trigger">
+                <div class="user-avatar" id="nav-user-avatar">A</div>
+                <span class="user-name" id="nav-user-name">Admin</span>
+                <i class="fa-solid fa-caret-down"></i>
+              </div>
+              <!-- Profile Dropdown Menu -->
+              <div class="profile-dropdown" id="profile-dropdown">
+                <div class="dropdown-header">
+                  <strong id="dropdown-full-name">Admin Portal</strong>
+                  <span id="dropdown-student-id">System Administrator</span>
+                  <span id="dropdown-email">mukesh710017@gmail.com</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <button id="dropdown-admin-dashboard-btn" class="dropdown-item">
+                  <i class="fa-solid fa-chart-line"></i> Admin Dashboard
+                </button>
+                <button id="dropdown-logout-btn" class="dropdown-item logout-item">
+                  <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Concurrency Control Panel (Collapsible Overlay Panel) -->
+      <section id="concurrency-panel" class="concurrency-panel collapsed">
+        <div class="panel-header">
+          <h3><i class="fa-solid fa-database"></i> Concurrency Simulator Settings</h3>
+          <button id="panel-close-btn" class="panel-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="panel-body">
+          <p class="panel-desc">Simulate backend conflicts when multiple students attempt to book the last available slot simultaneously.</p>
+          
+          <div class="control-row">
+            <div class="control-label">
+              <strong>Enable Race Condition Simulation</strong>
+              <small>Simulates a conflict error on submission where another transaction locks and books the last slot first.</small>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="race-condition-checkbox" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <strong>Simulate Backend Processing Delay</strong>
+              <small>Adds a 1.2-second network latency loading state to submissions.</small>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="latency-checkbox" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="panel-actions">
+            <button id="reset-slots-btn" class="btn btn-secondary btn-sm">
+              <i class="fa-solid fa-arrows-rotate"></i> Reset All Slots to Full
+            </button>
+            <button id="fill-slots-btn" class="btn btn-outline-danger btn-sm">
+              <i class="fa-solid fa-triangle-exclamation"></i> Set Slots to 1 Left (Test Full)
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Body Layout -->
+      <main class="main-content">
+        
+        <!-- ================= PAGE 1: CLUB OVERVIEW (HOME) ================= -->
+        <div id="overview-view" class="app-view active">
+          <!-- Hero Section with generated banner image -->
+          <section class="hero-banner">
+            <div class="hero-overlay"></div>
+            <img src="/assets/clubs_dashboard_banner.png" alt="Clubs Banner" class="hero-bg-img" />
+            <div class="hero-text-content slide-up">
+
+              <span class="hero-badge">Campus Life 2026</span>
+              <h1>Find Your Tribe. Book Your Spot.</h1>
+              <p>Explore elite campus clubs and reserve your membership slots in real time. Maximum capacity: 80 slots per club. Once they're gone, they're gone!</p>
+              <div class="hero-stats">
+                <div class="stat-item">
+                  <span class="stat-num" id="total-clubs-count">18</span>
+                  <span class="stat-lbl">Active Clubs</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                  <span class="stat-num" id="total-slots-remaining">1440</span>
+                  <span class="stat-lbl">Slots Available</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Quick Category Filters Section -->
+          <section class="category-quick-filters">
+            <button class="cat-tag active" data-category="All">All Clubs</button>
+            <button class="cat-tag" data-category="Technical"><i class="fa-solid fa-laptop-code"></i> Technology</button>
+            <button class="cat-tag" data-category="Cultural & Arts"><i class="fa-solid fa-palette"></i> Arts & Culture</button>
+            <button class="cat-tag" data-category="Social Service"><i class="fa-solid fa-handshake-angle"></i> Service</button>
+            <button class="cat-tag" data-category="Hobbies & Adventure"><i class="fa-solid fa-compass"></i> Hobbies</button>
+            <button class="cat-tag" data-category="Professional & Academic"><i class="fa-solid fa-graduation-cap"></i> Professional</button>
+          </section>
+
+          <!-- Search Results Header (Dynamic) -->
+          <div id="search-status-bar" class="search-status-bar" style="display: none;">
+            <p id="search-status-text">Showing 18 clubs matching search</p>
+            <button id="reset-search-link" class="reset-search-link">Clear Filters</button>
+          </div>
+
+          <!-- Clubs List / Grid -->
+          <section class="clubs-grid-section">
+            <div id="clubs-grid" class="clubs-grid">
+              <!-- Rendered via JS -->
+            </div>
+            <!-- Empty search fallback -->
+            <div id="empty-search-state" class="empty-state" style="display: none;">
+              <i class="fa-regular fa-folder-open empty-icon"></i>
+              <h3>No clubs found</h3>
+              <p>Try refining your search keyword or selecting a different category filter.</p>
+              <button id="empty-reset-btn" class="btn btn-primary">View All Clubs</button>
+            </div>
+          </section>
+        </div>
+
+        <!-- ================= PAGE 2: CLUB SLOT BOOKING PAGE ================= -->
+        <div id="booking-view" class="app-view">
+          
+          <!-- Back button and Navigation Context -->
+          <div class="view-header-nav">
+            <button id="booking-back-btn" class="btn-back">
+              <i class="fa-solid fa-arrow-left-long"></i> Back to Clubs
+            </button>
+            <span class="navigation-context">Home / Club Booking</span>
+          </div>
+
+          <div class="booking-layout">
+            <!-- Left Side: Club Profile & Info Cards -->
+            <div class="club-profile-sidebar">
+              <div class="glass-card club-header-card">
+                <div class="club-avatar-large" id="booking-club-icon">🤝</div>
+                <div class="club-meta-badges">
+                  <span class="badge badge-category" id="booking-club-category">Social Service</span>
+                </div>
+                <h2 id="booking-club-name">Rotaract Club</h2>
+                <p class="club-tagline-text" id="booking-club-tagline">Selfless service, global impact, and leadership development.</p>
+                
+                <div class="slot-tracker-booking-panel">
+                  <div class="slot-meta">
+                    <span class="slot-label">Slot Status</span>
+                    <span class="slot-capacity-max">Max: 80 Members</span>
+                  </div>
+                  <div class="slot-count-large">
+                    <span id="booking-club-slots" class="slots-num">45</span>
+                    <span class="slots-suffix">remaining</span>
+                  </div>
+                  <div class="slot-progress-bar-container">
+                    <div id="booking-club-progress" class="slot-progress-bar" style="width: 56.25%;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- General booking guidelines card -->
+              <div class="glass-card info-card">
+                <h3><i class="fa-solid fa-circle-info"></i> Registration Rules</h3>
+                <ul>
+                  <li>Each student is permitted a maximum of 1 slot per club.</li>
+                  <li>Slots are secured on a first-come, first-served basis.</li>
+                  <li>Incomplete submissions will fail form validation.</li>
+                  <li>Ensure your Student ID and Email match university records.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Right Side: Google Forms-Style Registration Form -->
+            <div class="registration-form-container">
+              
+              <!-- Form Top Aesthetics Strip -->
+              <div class="forms-header-banner" id="forms-accent-banner"></div>
+              
+              <div class="glass-card forms-main-card">
+                <div class="forms-title-section">
+                  <h2>Club Membership Form</h2>
+                  <p class="forms-desc">Please fill out this enrollment application accurately. Required fields are marked with an asterisk (<span class="required-star">*</span>).</p>
+                </div>
+
+                <form id="club-registration-form" novalidate>
+                  
+                  <!-- Student Name -->
+                  <div class="form-group">
+                    <label class="form-label" for="student-name">
+                      Student Full Name <span class="required-star">*</span>
+                    </label>
+                    <input type="text" id="student-name" name="studentName" placeholder="Enter your full name" required />
+                    <span class="error-msg" id="name-error">Please enter your full name.</span>
+                  </div>
+
+                  <!-- Student ID -->
+                  <div class="form-group">
+                    <label class="form-label" for="student-id">
+                      Student ID / Enrollment Number <span class="required-star">*</span>
+                    </label>
+                    <input type="text" id="student-id" name="studentId" placeholder="e.g., STU20261234" required />
+                    <span class="error-msg" id="id-error">Enrollment number is required.</span>
+                  </div>
+
+                  <!-- Two Column Grid for Email and Phone -->
+                  <div class="form-row">
+                    <div class="form-group col-6">
+                      <label class="form-label" for="student-email">
+                        Email Address <span class="required-star">*</span>
+                      </label>
+                      <input type="email" id="student-email" name="studentEmail" placeholder="yourname@university.edu" required />
+                      <span class="error-msg" id="email-error">Enter a valid university email.</span>
+                    </div>
+                    <div class="form-group col-6">
+                      <label class="form-label" for="student-phone">
+                        Phone Number <span class="required-star">*</span>
+                      </label>
+                      <input type="tel" id="student-phone" name="studentPhone" placeholder="10-digit number" required />
+                      <span class="error-msg" id="phone-error">Enter a valid 10-digit phone number.</span>
+                    </div>
+                  </div>
+
+                  <!-- Two Column Grid for Year of Study and Branch -->
+                  <div class="form-row">
+                    <div class="form-group col-6">
+                      <label class="form-label" for="student-year">
+                        Year of Study <span class="required-star">*</span>
+                      </label>
+                      <select id="student-year" name="studentYear" required>
+                        <option value="" disabled selected>Select Year</option>
+                        <option value="First Year">First Year</option>
+                        <option value="Second Year">Second Year</option>
+                        <option value="Third Year">Third Year</option>
+                        <option value="Fourth Year">Fourth Year</option>
+                      </select>
+                      <span class="error-msg" id="year-error">Please select your academic year.</span>
+                    </div>
+                    <div class="form-group col-6">
+                      <label class="form-label" for="student-branch">
+                        Department / Branch <span class="required-star">*</span>
+                      </label>
+                      <select id="student-branch" name="studentBranch" required>
+                        <option value="" disabled selected>Select Department</option>
+                        <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                        <option value="Electronics & Communication">Electronics & Communication</option>
+                        <option value="Mechanical Engineering">Mechanical Engineering</option>
+                        <option value="Civil Engineering">Civil Engineering</option>
+                        <option value="Electrical & Electronics">Electrical & Electronics</option>
+                        <option value="Biotechnology">Biotechnology</option>
+                        <option value="Business Administration">Business Administration</option>
+                      </select>
+                      <span class="error-msg" id="branch-error">Please select your department.</span>
+                    </div>
+                  </div>
+
+                  <!-- Textarea: Why join this club? -->
+                  <div class="form-group">
+                    <label class="form-label" for="statement-of-purpose">
+                      Why do you want to join this club? <span class="required-star">*</span>
+                    </label>
+                    <textarea id="statement-of-purpose" name="sop" rows="4" placeholder="Explain your motivation, interests, and what you hope to contribute or learn..." required></textarea>
+                    <span class="error-msg" id="sop-error">Please provide a brief explanation.</span>
+                  </div>
+
+                  <!-- Textarea: Relevant skills -->
+                  <div class="form-group">
+                    <label class="form-label" for="skills-experience">
+                      Any relevant skills or experience <span class="optional-label">(Optional)</span>
+                    </label>
+                    <textarea id="skills-experience" name="skills" rows="3" placeholder="e.g., Coding languages, art techniques, design software, event coordination experience..."></textarea>
+                  </div>
+
+                  <!-- Submit Panel -->
+                  <div class="form-submit-panel">
+                    <button type="button" id="form-cancel-btn" class="btn btn-secondary">
+                      Cancel
+                    </button>
+                    <button type="submit" id="form-submit-btn" class="btn btn-primary btn-icon-right">
+                      Confirm Booking & Submit <i class="fa-solid fa-circle-check"></i>
+                    </button>
+                  </div>
+
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 3: BOOKING CONFIRMATION PAGE ================= -->
+        <div id="confirmation-view" class="app-view">
+          <div class="confirmation-container">
+            
+            <!-- Confetti / Success Header -->
+            <div class="success-header">
+              <div class="success-icon-badge">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <h2>Registration Confirmed!</h2>
+              <p>Your booking details have been recorded successfully. Please present your ticket at the orientation.</p>
+            </div>
+
+            <!-- Digital Ticket Design -->
+            <div class="digital-ticket">
+              <div class="ticket-top" id="ticket-header-gradient">
+                <div class="ticket-glow"></div>
+                <div class="ticket-header-main">
+                  <span class="ticket-category-tag" id="ticket-club-category">Technology</span>
+                  <h3 id="ticket-club-name">Robotics Club</h3>
+                </div>
+                <div class="ticket-branding">
+                  <div class="brand-logo-small"><i class="fa-solid fa-ticket-simple"></i> ClubSphere</div>
+                </div>
+              </div>
+
+              <!-- Ticket Tear-off dotted separator -->
+              <div class="ticket-divider">
+                <div class="notch notch-left"></div>
+                <div class="dash-line"></div>
+                <div class="notch notch-right"></div>
+              </div>
+
+              <div class="ticket-body">
+                <div class="ticket-grid">
+                  
+                  <div class="ticket-info-block">
+                    <span class="info-label">STUDENT NAME</span>
+                    <span class="info-value" id="ticket-student-name">Alex Rivera</span>
+                  </div>
+
+                  <div class="ticket-info-block">
+                    <span class="info-label">STUDENT ID</span>
+                    <span class="info-value" id="ticket-student-id">STU20268899</span>
+                  </div>
+
+                  <div class="ticket-info-block">
+                    <span class="info-label">DEPARTMENT</span>
+                    <span class="info-value" id="ticket-student-branch">Computer Science</span>
+                  </div>
+
+                  <div class="ticket-info-block">
+                    <span class="info-label">YEAR OF STUDY</span>
+                    <span class="info-value" id="ticket-student-year">Third Year</span>
+                  </div>
+
+                  <div class="ticket-info-block">
+                    <span class="info-label">EMAIL ADDRESS</span>
+                    <span class="info-value" id="ticket-student-email">alex@university.edu</span>
+                  </div>
+
+                  <div class="ticket-info-block">
+                    <span class="info-label">PHONE NUMBER</span>
+                    <span class="info-value" id="ticket-student-phone">+1 (555) 998-0021</span>
+                  </div>
+
+                  <div class="ticket-info-block span-2">
+                    <span class="info-label">BOOKING ID</span>
+                    <span class="info-value highlight-text" id="ticket-booking-id">CS-ROB-45283-99</span>
+                  </div>
+
+                  <div class="ticket-info-block">
+                    <span class="info-label">BOOKED TIME</span>
+                    <span class="info-value" id="ticket-booking-time">22 Jun 2026, 08:30 PM</span>
+                  </div>
+
+                  <div class="ticket-info-block">
+                    <span class="info-label">STATUS</span>
+                    <span class="info-value status-pill"><i class="fa-solid fa-lock"></i> SECURED</span>
+                  </div>
+
+                </div>
+
+                <!-- Dotted Barcode Divider -->
+                <div class="barcode-divider"></div>
+
+                <!-- Ticket Barcode Footer -->
+                <div class="ticket-barcode-section">
+                  <div class="barcode-lines">
+                    <span></span><span></span><span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span><span></span><span></span><span></span>
+                  </div>
+                  <div class="barcode-number" id="ticket-barcode-num">CS4528399ROBOTICS</div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="confirmation-actions">
+              <button id="print-ticket-btn" class="btn btn-secondary">
+                <i class="fa-solid fa-print"></i> Print Ticket
+              </button>
+              <button id="conf-back-btn" class="btn btn-primary">
+                <i class="fa-solid fa-house"></i> Return to Clubs
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ================= PAGE 4: ADMIN LOGIN PAGE ================= -->
+        <div id="login-view" class="app-view">
+          <div class="auth-container">
+            <div class="glass-card auth-card">
+              <div class="auth-header">
+                <div class="auth-logo-icon">
+                  <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2>Admin Portal Login</h2>
+                <p>Log in with administrator credentials to view and manage student slot registrations.</p>
+              </div>
+              
+              <form id="login-form" novalidate>
+                <!-- Email -->
+                <div class="form-group">
+                  <label class="form-label" for="login-identifier">
+                    Admin Email Address <span class="required-star">*</span>
+                  </label>
+                  <input type="email" id="login-identifier" name="identifier" placeholder="e.g., mukesh710017@gmail.com" required />
+                  <span class="error-msg" id="login-identifier-error">Enter your registered admin email.</span>
+                </div>
+
+                <!-- Password -->
+                <div class="form-group">
+                  <label class="form-label" for="login-password">
+                    Password <span class="required-star">*</span>
+                  </label>
+                  <input type="password" id="login-password" name="password" placeholder="••••••••" required />
+                  <span class="error-msg" id="login-password-error">Please enter your password.</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                  Log In as Admin <i class="fa-solid fa-right-to-bracket"></i>
+                </button>
+              </form>
+
+              <div class="auth-footer">
+                <div class="test-credentials-box">
+                  <strong>Pre-seeded Admin Account:</strong>
+                  <ul>
+                    <li>Email: <code>mukesh710017@gmail.com</code></li>
+                    <li>Password: <code>mukesh@2198</code></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 5: ADMIN DASHBOARD VIEW ================= -->
+        <div id="admin-view" class="app-view">
+          <div class="admin-dashboard-container">
+            <div class="view-header-nav">
+              <button id="admin-back-btn" class="btn-back">
+                <i class="fa-solid fa-arrow-left-long"></i> Back to Home
+              </button>
+              <span class="navigation-context">Home / Admin Dashboard</span>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="admin-stats-grid">
+              <div class="glass-card stat-card">
+                <div class="stat-card-icon" style="color: var(--accent-teal)"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-card-data">
+                  <h3 id="admin-stat-total-registrations">0</h3>
+                  <span>Total Registrations</span>
+                </div>
+              </div>
+              <div class="glass-card stat-card">
+                <div class="stat-card-icon" style="color: var(--accent-green)"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="stat-card-data">
+                  <h3 id="admin-stat-total-slots-booked">0</h3>
+                  <span>Slots Booked</span>
+                </div>
+              </div>
+              <div class="glass-card stat-card">
+                <div class="stat-card-icon" style="color: var(--accent-orange)"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="stat-card-data">
+                  <h3 id="admin-stat-slots-remaining">1440</h3>
+                  <span>Remaining Slots</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-table-controls">
+              <h3>Student Registration Records</h3>
+              <div class="controls-inputs">
+                <button id="export-csv-btn" class="btn btn-outline btn-sm">Export CSV</button>
+                <button id="export-pdf-btn" class="btn btn-outline btn-sm">Export PDF</button>
+              </div>
+            </div>
+
+            <div class="glass-card table-card">
+              <div class="table-responsive-wrapper">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Student Details</th>
+                      <th>Club & Slot ID</th>
+                      <th>Academics</th>
+                      <th>Purpose & Contributions</th>
+                      <th>Booking Time</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-table-body">
+                    <!-- Rendered via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Empty admin bookings state -->
+              <div id="admin-empty-bookings-state" class="empty-state" style="display: none;">
+                <i class="fa-regular fa-folder-open empty-icon"></i>
+                <h3>No registrations found</h3>
+                <p>No student slot bookings match the search criteria or filters.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- App Footer -->
+      <footer class="footer">
+        <div class="footer-content">
+          <p>&copy; 2026 ClubSphere. Designed for Campus Engagement.</p>
+          <div class="footer-links">
+            <span><i class="fa-solid fa-circle-nodes"></i> Mock API Engine</span>
+            <span><i class="fa-solid fa-database"></i> LocalStorage LocalDB</span>
+          </div>
+        </div>
+      </footer>
+
+      <!-- System Alert Toast / Notification Overlay -->
+      <div id="system-toast" class="toast-notification">
+        <div class="toast-icon">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="toast-content">
+          <h4 id="toast-title">Transaction Conflict</h4>
+          <p id="toast-message">Another student completed their booking. This slot has expired.</p>
+        </div>
+        <button id="toast-close-btn" class="toast-close-btn">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Full Overlay Loader (For Simulation Delay) -->
+      <div id="full-page-loader" class="full-page-loader" style="display: none;">
+        <div class="loader-content">
+          <div class="spinner"></div>
+          <h3>Processing Transaction...</h3>
+          <p>Verifying slot locking registers on SQLite database...</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Main Module Script -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
