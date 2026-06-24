@@ -235,6 +235,29 @@
                   <li>Ensure your Student ID and Email match university records.</li>
                 </ul>
               </div>
+              
+              <!-- Leadership Card -->
+              <div class="glass-card info-card" style="margin-top: 1.5rem;">
+                <h3 style="font-family: serif; font-size: 1.5rem; margin-bottom: 1.5rem;">Leadership</h3>
+                
+                <h4 style="font-size: 0.85rem; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1rem;">Faculty Mentors</h4>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                  <img src="https://ui-avatars.com/api/?name=Dr.+Faculty&background=random&rounded=true" alt="Faculty" style="width: 50px; height: 50px; border-radius: 50%;">
+                  <div>
+                    <strong style="display: block; font-size: 1.1rem;">Dr. Faculty Member</strong>
+                    <span style="color: var(--text-secondary); font-size: 0.9rem;">Club Coordinator</span>
+                  </div>
+                </div>
+                
+                <h4 style="font-size: 0.85rem; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">Student Leads</h4>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <img src="https://ui-avatars.com/api/?name=Student+Lead&background=random&rounded=true" alt="Student Lead" style="width: 50px; height: 50px; border-radius: 50%;">
+                  <div>
+                    <strong style="display: block; font-size: 1.1rem;">Student Lead</strong>
+                    <span style="color: var(--accent-orange); font-size: 0.9rem;">President</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Right Side: Google Forms-Style Registration Form -->
@@ -553,7 +576,11 @@
             <div class="admin-table-controls">
               <h3>Student Registration Records</h3>
               <div class="controls-inputs">
-                <button id="export-csv-btn" class="btn btn-outline btn-sm">Export CSV</button>
+                <input type="text" id="admin-search-input" class="form-input" placeholder="Search students..." style="max-width: 200px;" />
+                <select id="admin-club-filter" class="form-input" style="max-width: 150px;">
+                  <option value="All">All Clubs</option>
+                </select>
+                <button id="export-csv-btn" class="btn btn-outline btn-sm">Export Excel</button>
                 <button id="export-pdf-btn" class="btn btn-outline btn-sm">Export PDF</button>
               </div>
             </div>
@@ -564,10 +591,11 @@
                   <thead>
                     <tr>
                       <th>Student Details</th>
-                      <th>Club & Slot ID</th>
+                      <th>Club &amp; Slot ID</th>
                       <th>Academics</th>
-                      <th>Purpose & Contributions</th>
+                      <th>Purpose &amp; Contributions</th>
                       <th>Booking Time</th>
+                      <th>Attendance</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -594,8 +622,8 @@
         <div class="footer-content">
           <p>&copy; 2026 ClubSphere. Designed for Campus Engagement.</p>
           <div class="footer-links">
-            <span><i class="fa-solid fa-circle-nodes"></i> Mock API Engine</span>
-            <span><i class="fa-solid fa-database"></i> LocalStorage LocalDB</span>
+            <span><i class="fa-solid fa-server"></i> Express Backend API</span>
+            <span><i class="fa-solid fa-database"></i> MongoDB Cloud</span>
           </div>
         </div>
       </footer>

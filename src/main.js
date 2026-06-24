@@ -1,4 +1,7 @@
 import { CLUBS_DATA } from './data/clubs.js';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 // ==========================================
 // 1. STATE INITIALIZATION
@@ -112,68 +115,45 @@ const adminStatTotalRegistrations = document.getElementById('admin-stat-total-re
 const adminStatTotalSlotsBooked = document.getElementById('admin-stat-total-slots-booked');
 const adminStatSlotsRemaining = document.getElementById('admin-stat-slots-remaining');
 
+const exportCsvBtn = document.getElementById('export-csv-btn');
+const exportPdfBtn = document.getElementById('export-pdf-btn');
+
 // ==========================================
 // 2. MOCK DATABASE (LOCALSTORAGE)
 // ==========================================
-function initDatabase() {
-  const localData = localStorage.getItem(DB_KEY);
-  if (localData) {
-    clubsState = JSON.parse(localData);
-    // Sync any missing clubs from CLUBS_DATA (safety check)
-    CLUBS_DATA.forEach(club => {
-      if (!clubsState.find(c => c.id === club.id)) {
-        clubsState.push({
-          ...club,
-          slotsRemaining: Math.floor(Math.random() * 45) + 15 // Start with realistic random slots remaining
-        });
+async function initDatabase() {
+  try {
+    const res = await fetch('http://localhost:3000/api/clubs');
+    let data = await res.json();
+    
+    if (!data || data.length === 0) {
+      // Seed backend
+      const seedRes = await fetch('http://localhost:3000/api/clubs/seed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(CLUBS_DATA.map(club => ({ ...club, slotsRemaining: MAX_SLOTS })))
+      });
+      if (seedRes.ok) {
+        const fetchRes = await fetch('http://localhost:3000/api/clubs');
+        data = await fetchRes.json();
       }
-    });
-  } else {
-    // First run initialization with realistic capacities
-    clubsState = CLUBS_DATA.map(club => {
-      // Set random starting capacities (e.g. 45/80 slots remaining)
-      let initialSlots = MAX_SLOTS;
-      if (club.id === 'rotaract') initialSlots = 45; // Exactly match user's prompt example
-      else if (club.id === 'robotics') initialSlots = 1; // Great for concurrency testing
-      else if (club.id === 'toast-masters') initialSlots = 0; // Starts full to demonstrate "Club Full" state
-      else {
-        initialSlots = Math.floor(Math.random() * 55) + 10; // Between 10 and 65 slots left
-      }
-
-      return {
-        ...club,
-        slotsRemaining: initialSlots,
-        weeklyUpdate: '' // Placeholder for weekly update text
-      };
-    });
-    saveDatabase();
-  }
-
-// Initialize Users Database (no pre-seeded accounts)
-const usersLocalData = localStorage.getItem(USERS_DB_KEY);
-if (usersLocalData) {
-  usersState = JSON.parse(usersLocalData);
-} else {
-  usersState = []; // empty list for future registrations
-  localStorage.setItem(USERS_DB_KEY, JSON.stringify(usersState));
-}
-
-  // Initialize Bookings Database
-  const bookingsLocalData = localStorage.getItem(BOOKINGS_DB_KEY);
-  if (bookingsLocalData) {
-    bookingsState = JSON.parse(bookingsLocalData);
-  } else {
-    bookingsState = [];
-    localStorage.setItem(BOOKINGS_DB_KEY, JSON.stringify(bookingsState));
+    }
+    clubsState = data;
+    updateAggregateCounters();
+    renderOverviewGrid();
+  } catch (error) {
+    console.error('Error fetching clubs from backend:', error);
+    showToast('Backend Connection Failed', 'Could not fetch clubs from database.', 'error');
   }
 
   // Initialize User Session
-  const sessionUserEmail = localStorage.getItem(USER_SESSION_KEY);
-  if (sessionUserEmail) {
-    const foundUser = usersState.find(u => u.email.toLowerCase() === sessionUserEmail.toLowerCase());
-    if (foundUser) {
-      currentUser = foundUser;
+  const sessionData = localStorage.getItem(USER_SESSION_KEY);
+  if (sessionData) {
+    try {
+      currentUser = JSON.parse(sessionData);
       updateAuthUI();
+    } catch (e) {
+      console.error(e);
     }
   }
 }
@@ -557,59 +537,34 @@ registrationForm.addEventListener('submit', function (e) {
   }
 });
 
-function executeTransaction(details) {
+async function executeTransaction(details) {
   // Hide loader
   fullPageLoader.style.display = 'none';
 
-  // Read current real-time database state (simulated atomic fetch)
   const clubIndex = clubsState.findIndex(c => c.id === selectedClubId);
   if (clubIndex === -1) {
     showToast("System Error", "The selected club could not be located in database registries.", "error");
     return;
   }
-
   const club = clubsState[clubIndex];
 
-  // 1. CONCURRENCY EXCEPTION CHECK
-  // Trigger conflict if user enabled race simulation OR if slots ran out in the interim
-  if (simulatedRaceCondition || club.slotsRemaining <= 0) {
-    // Dynamic error handling for race condition
+  // 1. CONCURRENCY EXCEPTION CHECK (Client-side simulation)
+  if (simulatedRaceCondition) {
     showToast(
       "Booking Conflict (Error 409)",
       `Slot Conflict Detected: Another transaction reserved the last slot for ${club.name} simultaneously. Your booking request was cancelled.`,
       "error"
     );
-
-    // Set slot to 0 to simulate real-time out-of-sync update
     club.slotsRemaining = 0;
-    saveDatabase();
     renderOverviewGrid();
     updateBookingPageView(selectedClubId);
     return;
   }
 
-  // Check if student has already booked a slot in this club
-  if (currentUser) {
-    const alreadyBooked = bookingsState.some(
-      b => b.clubId === selectedClubId && b.studentEmail.toLowerCase() === currentUser.email.toLowerCase()
-    );
-    if (alreadyBooked) {
-      showToast("Duplicate Booking", `You have already registered for a membership slot in ${club.name}.`, "error");
-      switchView('overview');
-      return;
-    }
-  }
-
-  // 2. SUCCESS TRANSACTION COMMITTAL
-  // Decrement slot
-  club.slotsRemaining -= 1;
-  saveDatabase();
-  renderOverviewGrid();
-
   // Generate confirmation ticket parameters
   const randNum = Math.floor(10000 + Math.random() * 90000);
   const code = club.name.slice(0, 3).toUpperCase();
-  const bookingId = `CS-${code}-${randNum}-${MAX_SLOTS - club.slotsRemaining}`;
+  const bookingId = `CS-${code}-${randNum}`;
   const now = new Date();
   const bookingTimeString = now.toLocaleDateString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric'
@@ -617,7 +572,6 @@ function executeTransaction(details) {
     hour: '2-digit', minute: '2-digit', hour12: true
   });
 
-  // Save booking details to bookingsState
   const newBooking = {
     bookingId: bookingId,
     clubId: selectedClubId,
@@ -634,11 +588,37 @@ function executeTransaction(details) {
     attendance: false
   };
 
-  bookingsState.push(newBooking);
-  localStorage.setItem(BOOKINGS_DB_KEY, JSON.stringify(bookingsState));
+  try {
+    const res = await fetch('http://localhost:3000/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBooking)
+    });
 
-  renderTicket(details, club, bookingId, bookingTimeString);
-  switchView('confirmation');
+    if (!res.ok) {
+      const errorData = await res.json();
+      if (res.status === 409) {
+        showToast("Booking Conflict", "No slots remaining for this club.", "error");
+        club.slotsRemaining = 0;
+        renderOverviewGrid();
+        updateBookingPageView(selectedClubId);
+      } else if (res.status === 400 && errorData.error === 'Duplicate booking') {
+        showToast("Duplicate Booking", `You have already registered for a membership slot in ${club.name}.`, "error");
+      } else {
+        showToast("Error", errorData.error || "An error occurred during booking.", "error");
+      }
+      return;
+    }
+
+    // 2. SUCCESS TRANSACTION COMMITTAL
+    club.slotsRemaining -= 1;
+    renderOverviewGrid();
+    renderTicket(details, club, bookingId, bookingTimeString);
+    switchView('confirmation');
+  } catch (error) {
+    console.error('Booking failed:', error);
+    showToast("Network Error", "Failed to communicate with the server. Please try again later.", "error");
+  }
 }
 
 function renderTicket(details, club, bookingId, timeStr) {
@@ -836,29 +816,42 @@ function handleLoginSubmit(e) {
   // Admin login check
   const ADMIN_EMAIL = 'mukesh710017@gmail.com';
   const ADMIN_PASSWORD = 'mukesh@2198';
+  
+  // Staff login check
+  const STAFF_DOMAIN = '@snsct.org';
+  const STAFF_PASSWORD = 'snsct@123';
+
   if (identifier === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-    // Create minimal admin user object
     currentUser = {
       email: identifier,
-      name: identifier.split('@')[0],
+      name: 'Admin User',
       id: 'ADMIN',
       role: 'admin'
     };
-    localStorage.setItem(USER_SESSION_KEY, currentUser.email);
-    updateAuthUI();
-    showToast('Admin Login Successful', `Welcome, ${currentUser.name}! Redirecting to dashboard.`, 'success');
-    switchView('admin');
+  } else if (identifier.endsWith(STAFF_DOMAIN) && password === STAFF_PASSWORD) {
+    currentUser = {
+      email: identifier,
+      name: identifier.split('@')[0],
+      id: 'STAFF',
+      role: 'staff'
+    };
+  } else {
+    // If neither match, show error
+    showToast('Authentication Failed', 'Incorrect email or password. Please try again.', 'error');
+    passwordInput.closest('.form-group').classList.add('invalid');
     return;
   }
-  // If not matching admin criteria, show error
-  showToast('Authentication Failed', 'Incorrect admin email or password. Please try again.', 'error');
-  passwordInput.closest('.form-group').classList.add('invalid');
+
+  localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
+  updateAuthUI();
+  showToast('Login Successful', `Welcome, ${currentUser.name}! Redirecting to dashboard.`, 'success');
+  switchView('admin');
 }
 
 // ==========================================
 // B. ADMIN DASHBOARD RENDERER
 // ==========================================
-function renderAdminDashboard() {
+async function renderAdminDashboard() {
   // Seed the club filter dropdown
   const existingClubs = new Set();
   adminClubFilter.innerHTML = '<option value="All">All Clubs</option>';
@@ -872,10 +865,25 @@ function renderAdminDashboard() {
     }
   });
 
-  // Update top statistics
-  const totalSlotsFilled = clubsState.reduce((sum, c) => sum + (MAX_SLOTS - c.slotsRemaining), 0);
+  // Ensure empty state is hidden and table is visible while loading
+  adminEmptyBookingsState.style.display = 'none';
+  adminTableBody.closest('.table-responsive-wrapper').style.display = '';
+
+  try {
+    const res = await fetch('http://localhost:3000/api/bookings');
+    if (!res.ok) throw new Error('Response not ok');
+    bookingsState = await res.json();
+  } catch (error) {
+    console.error('Failed to fetch bookings:', error);
+    showToast('Dashboard Error', 'Could not fetch bookings from server. Is the backend running?', 'error');
+    bookingsState = [];
+  }
+
+  // Update top statistics using actual booking count
+  const totalRegistrations = bookingsState.length;
+  const totalSlotsFilled = totalRegistrations;
   const totalSlotsRemaining = clubsState.reduce((sum, c) => sum + c.slotsRemaining, 0);
-  adminStatTotalRegistrations.textContent = bookingsState.length;
+  adminStatTotalRegistrations.textContent = totalRegistrations;
   adminStatTotalSlotsBooked.textContent = totalSlotsFilled;
   adminStatSlotsRemaining.textContent = totalSlotsRemaining;
 
@@ -884,6 +892,10 @@ function renderAdminDashboard() {
   // Wire up search and filter listeners (only once)
   adminSearchInput.oninput = renderAdminTable;
   adminClubFilter.onchange = renderAdminTable;
+  
+  // Wire export buttons
+  exportCsvBtn.onclick = exportToExcel;
+  exportPdfBtn.onclick = exportToPDF;
 }
 
 function renderAdminTable() {
@@ -910,6 +922,8 @@ function renderAdminTable() {
   adminEmptyBookingsState.style.display = 'none';
   adminTableBody.closest('.table-responsive-wrapper').style.display = '';
 
+  const isStaff = currentUser && currentUser.role === 'staff';
+
   filtered.forEach(booking => {
     const club = clubsState.find(c => c.id === booking.clubId) || {
       name: booking.clubName || 'Unknown Club',
@@ -917,6 +931,11 @@ function renderAdminTable() {
       accentColor: 'var(--accent-teal)',
       icon: '🎟️'
     };
+
+    const deleteButtonHtml = isStaff ? '' : `
+      <button class="btn-table-action btn-table-delete" title="Cancel Registration" data-booking-id="${escapeHtml(booking.bookingId)}">
+        <i class="fa-solid fa-trash-can"></i>
+      </button>`;
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -943,17 +962,16 @@ function renderAdminTable() {
         <div class="sop-cell-text">${escapeHtml(booking.sop || '—')}</div>
         ${booking.skills ? `<span class="sop-cell-skills"><strong>Skills:</strong> ${escapeHtml(booking.skills)}</span>` : ''}
       </td>
+      <td class="booking-time-cell" style="white-space:nowrap;font-size:0.8rem;color:var(--text-secondary)">${escapeHtml(booking.bookingTime || '—')}</td>
       <td class="attendance-cell">
-        <input type="checkbox" class="attendance-checkbox" data-booking-id="${escapeHtml(booking.bookingId)}"${booking.attendance ? ' checked' : ''} />
+        <input type="checkbox" class="attendance-checkbox" data-booking-id="${escapeHtml(booking.bookingId)}"${booking.attendance ? ' checked' : ''} ${isStaff ? 'disabled' : ''} />
       </td>
       <td class="actions-cell">
         <div class="action-btn-group">
           <button class="btn-table-action btn-table-view" title="View Ticket" data-booking-id="${escapeHtml(booking.bookingId)}">
             <i class="fa-solid fa-eye"></i>
           </button>
-          <button class="btn-table-action btn-table-delete" title="Cancel Registration" data-booking-id="${escapeHtml(booking.bookingId)}">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
+          ${deleteButtonHtml}
         </div>
       </td>
     `;
@@ -979,36 +997,45 @@ function renderAdminTable() {
     });
   });
 
-  adminTableBody.querySelectorAll('.attendance-checkbox').forEach(chk => {
-    chk.addEventListener('change', (e) => {
-      const bId = e.target.getAttribute('data-booking-id');
-      const b = bookingsState.find(x => x.bookingId === bId);
-      if(b) { b.attendance = e.target.checked; localStorage.setItem(BOOKINGS_DB_KEY, JSON.stringify(bookingsState)); }
+  if (!isStaff) {
+    adminTableBody.querySelectorAll('.attendance-checkbox').forEach(chk => {
+      chk.addEventListener('change', async (e) => {
+        const bId = e.target.getAttribute('data-booking-id');
+        const checked = e.target.checked;
+        const b = bookingsState.find(x => x.bookingId === bId);
+        if(b) { 
+          b.attendance = checked; 
+          try {
+            await fetch(`http://localhost:3000/api/bookings/${bId}/attendance`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ attendance: checked })
+            });
+          } catch(err) {
+            console.error('Failed to update attendance:', err);
+          }
+        }
+      });
     });
-  });
 
-  adminTableBody.querySelectorAll('.btn-table-delete').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const bookingId = btn.getAttribute('data-booking-id');
-      const idx = bookingsState.findIndex(b => b.bookingId === bookingId);
-      if (idx === -1) return;
-
-      const booking = bookingsState[idx];
-      // Restore the slot count
-      const clubIdx = clubsState.findIndex(c => c.id === booking.clubId);
-      if (clubIdx !== -1 && clubsState[clubIdx].slotsRemaining < MAX_SLOTS) {
-        clubsState[clubIdx].slotsRemaining += 1;
-        saveDatabase();
-        renderOverviewGrid();
-      }
-      bookingsState.splice(idx, 1);
-      localStorage.setItem(BOOKINGS_DB_KEY, JSON.stringify(bookingsState));
-
-      showToast("Registration Cancelled",
-        `Slot for ${booking.studentName} in ${booking.clubName} has been released.`, "info");
-      renderAdminDashboard();
+    adminTableBody.querySelectorAll('.btn-table-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const bookingId = btn.getAttribute('data-booking-id');
+        try {
+          const res = await fetch(`http://localhost:3000/api/bookings/${bookingId}`, {
+            method: 'DELETE'
+          });
+          if (res.ok) {
+            showToast("Registration Cancelled", "Slot has been released.", "info");
+            renderAdminDashboard(); // Refresh data
+            initDatabase(); // Refresh clubs state to update slots
+          }
+        } catch(err) {
+          console.error('Failed to delete booking:', err);
+        }
+      });
     });
-  });
+  }
 }
 
 function escapeHtml(str) {
@@ -1018,6 +1045,83 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// ==========================================
+// C. EXPORT LOGIC (EXCEL & PDF)
+// ==========================================
+function getExportData() {
+  const query = adminSearchInput.value.trim().toLowerCase();
+  const clubFilter = adminClubFilter.value;
+
+  const exportList = bookingsState.filter(b => {
+    const matchClub = clubFilter === 'All' || b.clubId === clubFilter;
+    const matchSearch = !query ||
+      b.studentName.toLowerCase().includes(query) ||
+      b.studentId.toLowerCase().includes(query) ||
+      (b.studentEmail && b.studentEmail.toLowerCase().includes(query));
+    return matchClub && matchSearch;
+  });
+
+  return exportList.map(b => {
+    const clubName = clubsState.find(c => c.id === b.clubId)?.name || b.clubName;
+    return {
+      'Student Name': b.studentName,
+      'Student ID': b.studentId,
+      'Email': b.studentEmail,
+      'Phone': b.studentPhone,
+      'Club Name': clubName,
+      'Slot ID': b.bookingId,
+      'Year': b.studentYear,
+      'Branch': b.studentBranch,
+      'Booking Time': b.bookingTime,
+      'Attendance': b.attendance ? 'Present' : 'Absent',
+      'Purpose': b.sop || '',
+      'Skills': b.skills || ''
+    };
+  });
+}
+
+function exportToExcel() {
+  const data = getExportData();
+  if(data.length === 0) {
+    showToast("Export Failed", "No records to export.", "error");
+    return;
+  }
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Registrations");
+  XLSX.writeFile(workbook, "Student_Registrations.xlsx");
+}
+
+function exportToPDF() {
+  const data = getExportData();
+  if(data.length === 0) {
+    showToast("Export Failed", "No records to export.", "error");
+    return;
+  }
+
+  const doc = new jsPDF('landscape');
+  doc.text("Student Registration Records", 14, 15);
+  
+  const tableData = data.map(row => [
+    row['Student Name'],
+    row['Student ID'],
+    row['Club Name'],
+    row['Slot ID'],
+    row['Booking Time'],
+    row['Attendance']
+  ]);
+
+  autoTable(doc, {
+    startY: 20,
+    head: [['Name', 'ID', 'Club', 'Slot ID', 'Booking Time', 'Attendance']],
+    body: tableData,
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [255, 65, 108] }
+  });
+
+  doc.save("Student_Registrations.pdf");
 }
 
 // ==========================================
