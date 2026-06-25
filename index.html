@@ -43,7 +43,7 @@
           <i class="fa-solid fa-filter filter-icon"></i>
           <select id="category-filter">
             <option value="All">All Categories</option>
-            <option value="Technical">Technology</option>
+            <option value="Technology">Technology</option>
             <option value="Cultural & Arts">Cultural & Arts</option>
             <option value="Social Service">Social Service</option>
             <option value="Hobbies & Adventure">Hobbies & Adventure</option>
@@ -165,7 +165,7 @@
         <!-- Quick Category Filters Section -->
         <section class="category-quick-filters">
           <button class="cat-tag active" data-category="All">All Clubs</button>
-          <button class="cat-tag" data-category="Technical"><i class="fa-solid fa-laptop-code"></i> Technology</button>
+          <button class="cat-tag" data-category="Technology"><i class="fa-solid fa-laptop-code"></i> Technology</button>
           <button class="cat-tag" data-category="Cultural & Arts"><i class="fa-solid fa-palette"></i> Arts &
             Culture</button>
           <button class="cat-tag" data-category="Social Service"><i class="fa-solid fa-handshake-angle"></i>
@@ -587,6 +587,9 @@
 
           <!-- Action buttons -->
           <div class="confirmation-actions">
+            <button id="ticket-back-btn" class="btn btn-outline" style="display: none; border-color: var(--accent-teal); color: var(--accent-teal); margin-right: 0.5rem;">
+              <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
             <button id="print-ticket-btn" class="btn btn-secondary">
               <i class="fa-solid fa-print"></i> Print Ticket
             </button>
@@ -692,56 +695,66 @@
             </div>
           </div>
 
-          <div class="admin-table-controls">
-            <h3>Student Registration Records</h3>
-            <div class="controls-inputs">
-              <input type="text" id="admin-search-input" class="form-input" placeholder="Search students..."
-                style="max-width: 200px;" />
-              <select id="admin-club-filter" class="form-input" style="max-width: 150px;">
-                <option value="All">All Clubs</option>
-              </select>
-              <button id="export-csv-btn" class="btn btn-outline btn-sm">Export Excel</button>
-              <button id="export-pdf-btn" class="btn btn-outline btn-sm">Export PDF</button>
-            </div>
-          </div>
-
-          <div class="glass-card table-card">
-            <div class="table-responsive-wrapper">
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Student Details</th>
-                    <th>Club &amp; Slot ID</th>
-                    <th>Academics</th>
-                    <th>Purpose &amp; Contributions</th>
-                    <th>Booking Time</th>
-                    <th>Attendance</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="admin-table-body">
-                  <!-- Rendered via JS -->
-                </tbody>
-              </table>
+          <!-- Wrap Detailed Registrations Container -->
+          <div id="detailed-registrations-container">
+            <div class="admin-table-controls">
+              <h3>Student Registration Records</h3>
+              <div class="controls-inputs">
+                <input type="text" id="admin-search-input" class="form-input" placeholder="Search students..."
+                  style="max-width: 200px;" />
+                <select id="admin-club-filter" class="form-input" style="max-width: 150px;">
+                  <option value="All">All Clubs</option>
+                </select>
+                <button id="export-csv-btn" class="btn btn-outline btn-sm">Export Excel</button>
+                <button id="export-pdf-btn" class="btn btn-outline btn-sm">Export PDF</button>
+              </div>
             </div>
 
-            <!-- Empty admin bookings state -->
-            <div id="admin-empty-bookings-state" class="empty-state" style="display: none;">
-              <i class="fa-regular fa-folder-open empty-icon"></i>
-              <h3>No registrations found</h3>
-              <p>No student slot bookings match the search criteria or filters.</p>
+            <div class="glass-card table-card">
+              <div class="table-responsive-wrapper">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Student Details</th>
+                      <th>Club &amp; Slot ID</th>
+                      <th>Academics</th>
+                      <th>Purpose &amp; Contributions</th>
+                      <th>Booking Time</th>
+                      <th>Attendance</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-table-body">
+                    <!-- Rendered via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Empty admin bookings state -->
+              <div id="admin-empty-bookings-state" class="empty-state" style="display: none;">
+                <i class="fa-regular fa-folder-open empty-icon"></i>
+                <h3>No registrations found</h3>
+                <p>No student slot bookings match the search criteria or filters.</p>
+              </div>
             </div>
           </div>
 
           <!-- ================= STAFF SECTION: DAILY ATTENDANCE ================= -->
           <div id="staff-attendance-section" class="glass-card" style="margin-top: 2rem; padding: 2rem; display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
               <h3 style="display: flex; align-items: center; gap: 0.5rem; color: #fff; margin: 0;">
                 <i class="fa-solid fa-calendar-check" style="color: var(--accent-green);"></i> Daily Attendance
               </h3>
-              <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <label for="attendance-date-picker" style="color: var(--text-secondary); font-size: 0.9rem;">Date:</label>
-                <input type="date" id="attendance-date-picker" class="form-input" style="max-width: 150px; padding: 0.4rem 0.8rem; height: auto;" />
+                <input type="date" id="attendance-date-picker" class="form-input" style="max-width: 150px; padding: 0.4rem 0.8rem; height: auto; margin-right: 0.5rem;" />
+                
+                <button id="btn-show-registrations" class="btn btn-outline btn-sm">
+                  <i class="fa-solid fa-eye"></i> View Detailed Registrations
+                </button>
+                <button id="btn-show-report" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-file-arrow-up"></i> Submit Report
+                </button>
               </div>
             </div>
 
@@ -858,6 +871,32 @@
         <div class="spinner"></div>
         <h3>Processing Transaction...</h3>
         <p>Verifying slot locking registers on SQLite database...</p>
+      </div>
+    </div>
+
+    <!-- Modal: View Detailed Registrations -->
+    <div id="registrations-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content glass-card">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-users"></i> Registered Students Details</h3>
+          <button id="close-registrations-modal" class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="modal-table-container" style="padding: 0 10px 20px 10px;">
+          <!-- Appended dynamically for staff -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Submit Report -->
+    <div id="report-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content glass-card" style="max-width: 550px;">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-file-arrow-up"></i> Submit Club Report</h3>
+          <button id="close-report-modal" class="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="modal-report-container" style="padding: 0 10px 20px 10px;">
+          <!-- Appended dynamically for staff -->
+        </div>
       </div>
     </div>
 

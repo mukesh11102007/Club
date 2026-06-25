@@ -11,6 +11,12 @@ const USERS_DB_KEY = 'clubsphere_users_v1';
 const BOOKINGS_DB_KEY = 'clubsphere_bookings_v1';
 const USER_SESSION_KEY = 'clubsphere_session_v1';
 
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://club2-di9s.onrender.com';
+
+let attendanceState = [];
+
 // ==========================================
 // PRE-SEEDED DEMO ACCOUNTS (Add more here!)
 // ==========================================
@@ -43,6 +49,7 @@ const searchInput = document.getElementById('search-input');
 const searchClearBtn = document.getElementById('search-clear-btn');
 const categoryFilter = document.getElementById('category-filter');
 const categoryTags = document.querySelectorAll('.cat-tag');
+let customCategoryFilter;
 const clubsGrid = document.getElementById('clubs-grid');
 const emptySearchState = document.getElementById('empty-search-state');
 const searchStatusBar = document.getElementById('search-status-bar');
@@ -124,26 +131,30 @@ const exportPdfBtn = document.getElementById('export-pdf-btn');
 // ==========================================
 async function initDatabase() {
   try {
-    const res = await fetch('https://club2-di9s.onrender.com/api/clubs');
+    const res = await fetch(`${API_BASE_URL}/api/clubs`);
     let data = await res.json();
     
     if (!data || data.length === 0) {
       // Seed backend
-      const seedRes = await fetch('https://club2-di9s.onrender.com/api/clubs/seed', {
+      const seedRes = await fetch(`${API_BASE_URL}/api/clubs/seed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(CLUBS_DATA.map(club => ({ ...club, slotsRemaining: MAX_SLOTS })))
       });
       if (seedRes.ok) {
-        const fetchRes = await fetch('https://club2-di9s.onrender.com/api/clubs');
+        const fetchRes = await fetch(`${API_BASE_URL}/api/clubs`);
         data = await fetchRes.json();
       }
     }
-    // Merge youtubeId from CLUBS_DATA so clubs have unique videos if the database doesn't have them
+    // Merge logoUrl and coverUrl from CLUBS_DATA so clubs have high-res logos/covers
     data = data.map(dbClub => {
       const localClub = CLUBS_DATA.find(c => c.id === dbClub.id);
-      if (localClub && localClub.youtubeId) {
-        return { ...dbClub, youtubeId: localClub.youtubeId };
+      if (localClub) {
+        return {
+          ...dbClub,
+          logoUrl: localClub.logoUrl,
+          coverUrl: localClub.coverUrl
+        };
       }
       return dbClub;
     });
@@ -251,15 +262,7 @@ function switchView(viewName) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, 100);
 
-  // Stop card videos when leaving overview
-  if (viewName !== 'overview') {
-    const cardIframes = document.querySelectorAll('.card-yt-iframe');
-    cardIframes.forEach(iframe => {
-      if (iframe.contentWindow) {
-        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-      }
-    });
-  }
+
 
   // Manage navbar actions visibility (only show search/filter on Overview)
   if (viewName === 'overview') {
@@ -273,6 +276,14 @@ function switchView(viewName) {
     renderAdminDashboard();
   }
   
+  // Show/hide ticket back button on confirmation view
+  if (viewName === 'confirmation') {
+    const ticketBackBtn = document.getElementById('ticket-back-btn');
+    if (ticketBackBtn) {
+      ticketBackBtn.style.display = currentUser ? 'inline-block' : 'none';
+    }
+  }
+
   // Stop video when leaving club detail
   if (viewName !== 'booking') {
     const heroVideo = document.getElementById('club-detail-hero-video');
@@ -331,6 +342,9 @@ function filterClubs() {
 
 function syncCategoryControls(categoryValue) {
   categoryFilter.value = categoryValue;
+  if (customCategoryFilter) {
+    customCategoryFilter.syncValue(categoryValue);
+  }
   categoryTags.forEach(tag => {
     if (tag.getAttribute('data-category') === categoryValue) {
       tag.classList.add('active');
@@ -379,26 +393,12 @@ function renderOverviewGrid() {
     card.style.overflow = 'hidden';
 
     card.innerHTML = `
-      <div class="club-card-yt-container" style="position: relative; width: 100%; height: 150px; overflow: hidden; z-index: 1;">
-        <iframe
-          class="card-yt-iframe"
-          src="https://www.youtube.com/embed/${club.youtubeId || 'N6IdjbbRWiU'}?enablejsapi=1&rel=0&modestbranding=1&mute=1&autoplay=0&controls=0"
-          title="Club Video"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;"
-        ></iframe>
-        <div class="video-hover-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); transition: background 0.3s ease, opacity 0.3s ease;">
-          <div class="play-overlay-btn" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid #fff; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: transform 0.3s ease, opacity 0.3s ease;">
-            <i class="fa-solid fa-play" style="color: #fff; font-size: 14px; margin-left: 2px;"></i>
-          </div>
-        </div>
-      </div>
+      <div class="club-card-header" style="height: 100px; background: ${club.coverUrl ? `url('${club.coverUrl}') center/cover no-repeat` : club.accentColor}; position: relative; z-index: 1; ${club.coverUrl ? 'opacity: 1;' : 'opacity: 0.9;'}"></div>
       <div style="position: relative; z-index: 2;">
         <div class="club-card-avatar" style="background: ${club.accentColor}; top: -30px; overflow: hidden; padding: 2px;">
           <img src="${club.logoUrl || ''}" alt="${club.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; background: #fff;">
         </div>
-        <div class="club-card-body" style="padding-top: 30px;">
+        <div class="club-card-body" style="padding-top: 40px;">
           <span class="club-category-tag">${club.category}</span>
           <h3>${club.name}</h3>
           <p>${club.tagline}</p>
@@ -426,33 +426,6 @@ function renderOverviewGrid() {
         </div>
       </div>
     `;
-
-    // Hover logic for the YouTube video
-    card.addEventListener('mouseenter', () => {
-      const overlay = card.querySelector('.video-hover-overlay');
-      const iframe = card.querySelector('.card-yt-iframe');
-      if (overlay) {
-        overlay.style.background = 'rgba(0,0,0,0)';
-        const playBtn = overlay.querySelector('.play-overlay-btn');
-        if (playBtn) playBtn.style.opacity = '0';
-      }
-      if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-      }
-    });
-
-    card.addEventListener('mouseleave', () => {
-      const overlay = card.querySelector('.video-hover-overlay');
-      const iframe = card.querySelector('.card-yt-iframe');
-      if (overlay) {
-        overlay.style.background = 'rgba(0,0,0,0.5)';
-        const playBtn = overlay.querySelector('.play-overlay-btn');
-        if (playBtn) playBtn.style.opacity = '1';
-      }
-      if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-      }
-    });
 
     // Check if we need to show booking button
 
@@ -496,7 +469,7 @@ function renderClubDetailPage(clubId) {
 
   // Hero banner
   const hero = document.getElementById('club-detail-hero');
-  hero.style.background = club.accentColor;
+  hero.style.background = club.coverUrl ? `url('${club.coverUrl}') center/cover no-repeat` : club.accentColor;
 
   // Fill in detail fields
   document.getElementById('detail-club-icon').innerHTML = `<img src="${club.logoUrl || ''}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" />`;
@@ -740,7 +713,7 @@ async function executeTransaction(details) {
   };
 
   try {
-    const res = await fetch('https://club2-di9s.onrender.com/api/bookings', {
+    const res = await fetch(`${API_BASE_URL}/api/bookings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newBooking)
@@ -947,10 +920,23 @@ function handleLoginSubmit(e) {
   
   const identifierInput = document.getElementById('login-identifier');
   const passwordInput = document.getElementById('login-password');
+  const emailError = document.getElementById('login-identifier-error');
+  const pwdError = document.getElementById('login-password-error');
   
+  // Add input listeners once to clear invalid classes on typing
+  if (!loginForm.dataset.listenersAttached) {
+    loginForm.dataset.listenersAttached = 'true';
+    [identifierInput, passwordInput].forEach(input => {
+      input.addEventListener('input', () => {
+        input.closest('.form-group').classList.remove('invalid');
+      });
+    });
+  }
+
   let valid = true;
   if (!identifierInput.value.trim()) {
     identifierInput.closest('.form-group').classList.add('invalid');
+    if (emailError) emailError.textContent = 'Enter your registered staff email.';
     valid = false;
   } else {
     identifierInput.closest('.form-group').classList.remove('invalid');
@@ -958,6 +944,7 @@ function handleLoginSubmit(e) {
   
   if (!passwordInput.value.trim()) {
     passwordInput.closest('.form-group').classList.add('invalid');
+    if (pwdError) pwdError.textContent = 'Please enter your password.';
     valid = false;
   } else {
     passwordInput.closest('.form-group').classList.remove('invalid');
@@ -978,7 +965,8 @@ function handleLoginSubmit(e) {
     
     if (!clubExists) {
       showToast('Authentication Failed', `No club found with ID: ${clubId}. Ensure your email matches [club-id]@snsct.org`, 'error');
-      passwordInput.closest('.form-group').classList.add('invalid');
+      identifierInput.closest('.form-group').classList.add('invalid');
+      if (emailError) emailError.textContent = `No club found with ID: ${clubId}.`;
       return;
     }
 
@@ -993,6 +981,7 @@ function handleLoginSubmit(e) {
     // Only allow staff login from the form
     showToast('Authentication Failed', 'Incorrect staff email or password. Please try again.', 'error');
     passwordInput.closest('.form-group').classList.add('invalid');
+    if (pwdError) pwdError.textContent = 'Incorrect password.';
     return;
   }
 
@@ -1039,13 +1028,23 @@ async function renderAdminDashboard() {
   adminTableBody.closest('.table-responsive-wrapper').style.display = '';
 
   try {
-    const res = await fetch('https://club2-di9s.onrender.com/api/bookings');
+    const res = await fetch(`${API_BASE_URL}/api/bookings`);
     if (!res.ok) throw new Error('Response not ok');
     bookingsState = await res.json();
   } catch (error) {
     console.error('Failed to fetch bookings:', error);
     showToast('Dashboard Error', 'Could not fetch bookings from server. Is the backend running?', 'error');
     bookingsState = [];
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/attendance`);
+    if (res.ok) {
+      attendanceState = await res.json();
+    }
+  } catch (error) {
+    console.error('Failed to fetch attendance state:', error);
+    attendanceState = [];
   }
 
   // Filter bookings and clubs for stats if staff
@@ -1071,18 +1070,42 @@ async function renderAdminDashboard() {
   exportCsvBtn.onclick = exportToExcel;
   exportPdfBtn.onclick = exportToPDF;
 
-  // Toggle report section visibility
+  // Toggle report section visibility and move elements to/from modals based on role
   const staffReportSection = document.getElementById('staff-report-section');
   const adminReportsSection = document.getElementById('admin-reports-section');
   const staffAttendanceSection = document.getElementById('staff-attendance-section');
+  const registrationsContainer = document.getElementById('detailed-registrations-container');
+  const modalTableContainer = document.getElementById('modal-table-container');
+  const modalReportContainer = document.getElementById('modal-report-container');
+  const adminDashboardContainer = document.querySelector('.admin-dashboard-container');
   
   if (isStaff) {
-    if (staffReportSection) staffReportSection.style.display = 'block';
+    // Move detailed registrations table into the modal
+    if (registrationsContainer && modalTableContainer) {
+      modalTableContainer.appendChild(registrationsContainer);
+      registrationsContainer.style.display = 'block';
+    }
+    // Move report upload form into the report modal
+    if (staffReportSection && modalReportContainer) {
+      modalReportContainer.appendChild(staffReportSection);
+      staffReportSection.style.display = 'block';
+      staffReportSection.style.marginTop = '0';
+    }
+
     if (adminReportsSection) adminReportsSection.style.display = 'none';
     if (staffAttendanceSection) staffAttendanceSection.style.display = 'block';
     renderStaffAttendance();
   } else {
-    if (staffReportSection) staffReportSection.style.display = 'none';
+    // Move detailed registrations table back to main dashboard layout
+    if (registrationsContainer && adminDashboardContainer && staffAttendanceSection) {
+      adminDashboardContainer.insertBefore(registrationsContainer, staffAttendanceSection);
+      registrationsContainer.style.display = 'block';
+    }
+    // Hide staff report section
+    if (staffReportSection) {
+      staffReportSection.style.display = 'none';
+    }
+
     if (adminReportsSection) adminReportsSection.style.display = 'block';
     if (staffAttendanceSection) staffAttendanceSection.style.display = 'none';
     renderAdminReportsList();
@@ -1099,11 +1122,40 @@ async function renderStaffAttendance() {
 
   if (!tableBody || !datePicker) return;
 
-  // Set default date to today
-  const todayStr = new Date().toISOString().split('T')[0];
-  if (!datePicker.value) datePicker.value = todayStr;
+  // Get today's local date string
+  const today = new Date();
+  const yearToday = today.getFullYear();
+  const monthToday = String(today.getMonth() + 1).padStart(2, '0');
+  const dateToday = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${yearToday}-${monthToday}-${dateToday}`;
 
-  const selectedDate = datePicker.value;
+  // Helper to snap a date to the nearest Wednesday (local time safe, allowing today's date for testing)
+  const getNearestWednesday = (dateStr) => {
+    if (dateStr === todayStr) return dateStr;
+    const d = new Date(dateStr + 'T00:00:00');
+    const day = d.getDay();
+    if (day === 3) return dateStr;
+    const diff = day - 3;
+    d.setDate(d.getDate() - diff);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${date}`;
+  };
+
+  // Set default date to today's date for testing
+  if (!datePicker.value) {
+    datePicker.value = todayStr;
+  }
+
+  let selectedDate = datePicker.value;
+  const snappedDate = getNearestWednesday(selectedDate);
+  if (snappedDate !== selectedDate) {
+    showToast('Club Schedule', 'Club sessions are held on Wednesdays only. Snapping to the nearest Wednesday.', 'warning');
+    datePicker.value = snappedDate;
+    selectedDate = snappedDate;
+  }
+
   const clubId = currentUser.clubId;
 
   // Wire date picker change
@@ -1112,7 +1164,7 @@ async function renderStaffAttendance() {
   // Fetch bookings for this club
   let bookings = [];
   try {
-    const res = await fetch('https://club2-di9s.onrender.com/api/bookings');
+    const res = await fetch(`${API_BASE_URL}/api/bookings`);
     const all = await res.json();
     bookings = all.filter(b => b.clubId === clubId);
   } catch (e) {
@@ -1130,7 +1182,7 @@ async function renderStaffAttendance() {
   // Fetch all attendance records for this club
   let allAttendance = [];
   try {
-    const res = await fetch(`https://club2-di9s.onrender.com/api/attendance/${clubId}`);
+    const res = await fetch(`${API_BASE_URL}/api/attendance/${clubId}`);
     allAttendance = await res.json();
   } catch (e) {
     console.warn('Could not fetch attendance records:', e);
@@ -1143,12 +1195,40 @@ async function renderStaffAttendance() {
     attendanceMap[rec.studentEmail][rec.date] = rec.status;
   });
 
-  // Get last 5 unique dates from attendance (or past 5 calendar days)
+  // Get past 5 Wednesdays including the selected one (or today's date)
   const past5Dates = [];
-  for (let i = 4; i >= 0; i--) {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() - i);
-    past5Dates.push(d.toISOString().split('T')[0]);
+  const baseDate = new Date(selectedDate + 'T00:00:00');
+  
+  // Format helper for YYYY-MM-DD
+  const formatLocalYMD = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dt = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dt}`;
+  };
+
+  past5Dates.push(selectedDate);
+  
+  const baseDay = baseDate.getDay();
+  if (baseDay === 3) {
+    past5Dates.length = 0; // Clear and push 5 Wednesdays
+    for (let i = 4; i >= 0; i--) {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() - (i * 7));
+      past5Dates.push(formatLocalYMD(d));
+    }
+  } else {
+    // If selectedDate is a special testing date (e.g. today's date which is Thursday),
+    // we want to get the 4 Wednesdays preceding baseDate.
+    const prevWed = new Date(baseDate);
+    const diff = (baseDay >= 3) ? (baseDay - 3) : (baseDay + 4);
+    prevWed.setDate(prevWed.getDate() - diff);
+    
+    for (let i = 0; i < 4; i++) {
+      const d = new Date(prevWed);
+      d.setDate(prevWed.getDate() - (i * 7));
+      past5Dates.unshift(formatLocalYMD(d));
+    }
   }
 
   tableBody.innerHTML = '';
@@ -1164,15 +1244,17 @@ async function renderStaffAttendance() {
     // Count total absents
     const totalAbsent = Object.values(attendanceMap[emailKey] || {}).filter(s => s === 'ABSENT').length;
 
-    // Build history dots
+    // Build history dots (displaying actual day number)
     const historyHtml = past5Dates.map(d => {
       const dayStatus = (attendanceMap[emailKey] || {})[d];
-      const dayLabel = new Date(d + 'T00:00:00').toLocaleDateString('en', { weekday: 'short' }).charAt(0);
+      const dateObj = new Date(d + 'T00:00:00');
+      const dayLabel = dateObj.getDate();
+      const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       const dotClass = dayStatus === 'PRESENT' ? 'present' : dayStatus === 'ABSENT' ? 'absent' : 'none';
       const dotIcon = dayStatus === 'PRESENT' ? '✓' : dayStatus === 'ABSENT' ? '✗' : '·';
       return `
-        <div class="history-day">
-          <span class="history-day-label">${dayLabel}</span>
+        <div class="history-day" title="${formattedDate}">
+          <span class="history-day-label" style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 500;">${dayLabel}</span>
           <div class="history-day-dot ${dotClass}">${dotIcon}</div>
         </div>`;
     }).join('');
@@ -1206,22 +1288,81 @@ async function renderStaffAttendance() {
       </td>
     `;
 
-    // Attach button handlers
+    // Attach button handlers with optimistic updates
     row.querySelectorAll('.btn-attendance').forEach(btn => {
       btn.addEventListener('click', async () => {
         const email = btn.dataset.email;
         const name = btn.dataset.name;
         const status = btn.dataset.status;
+
+        // Visual Optimistic Feedback
+        const group = btn.closest('.attendance-status-group');
+        group.querySelectorAll('.btn-attendance').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update local map state optimistically
+        if (!attendanceMap[email]) attendanceMap[email] = {};
+        const oldStatus = attendanceMap[email][selectedDate];
+        attendanceMap[email][selectedDate] = status;
+
+        // Update global attendanceState array
+        let existingRec = attendanceState.find(a => a.studentEmail === email && a.clubId === clubId && a.date === selectedDate);
+        if (existingRec) {
+          existingRec.status = status;
+        } else {
+          attendanceState.push({ clubId, studentEmail: email, studentName: name, date: selectedDate, status });
+        }
+
+        // Re-render admin table to update ratio badge instantly
+        renderAdminTable();
+
+        // Instantly update badge count
+        const totalAbsentNew = Object.values(attendanceMap[email]).filter(s => s === 'ABSENT').length;
+        const badge = row.querySelector('.absent-badge');
+        if (badge) {
+          badge.textContent = totalAbsentNew;
+          badge.className = `absent-badge ${totalAbsentNew === 0 ? 'low' : totalAbsentNew <= 3 ? 'mid' : 'high'}`;
+        }
+
+        // Instantly update history dots
+        const historyGrid = row.querySelector('.history-grid');
+        if (historyGrid) {
+          historyGrid.innerHTML = past5Dates.map(d => {
+            const dayStatus = attendanceMap[email][d];
+            const dateObj = new Date(d + 'T00:00:00');
+            const dayLabel = dateObj.getDate();
+            const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const dotClass = dayStatus === 'PRESENT' ? 'present' : dayStatus === 'ABSENT' ? 'absent' : 'none';
+            const dotIcon = dayStatus === 'PRESENT' ? '✓' : dayStatus === 'ABSENT' ? '✗' : '·';
+            return `
+              <div class="history-day" title="${formattedDate}">
+                <span class="history-day-label" style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 500;">${dayLabel}</span>
+                <div class="history-day-dot ${dotClass}">${dotIcon}</div>
+              </div>`;
+          }).join('');
+        }
+
+        // Make API Call in background
         try {
-          await fetch('https://club2-di9s.onrender.com/api/attendance', {
+          const res = await fetch(`${API_BASE_URL}/api/attendance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ clubId, studentEmail: email, studentName: name, date: selectedDate, status })
           });
-          // Re-render to show updated state
-          renderStaffAttendance();
+          if (!res.ok) throw new Error('API failed');
         } catch (err) {
-          showToast('Error', 'Could not save attendance. Check backend.', 'error');
+          showToast('Sync Error', 'Failed to save attendance on the server. Rolling back.', 'error');
+          // Rollback local state
+          if (oldStatus) {
+            attendanceMap[email][selectedDate] = oldStatus;
+            if (existingRec) existingRec.status = oldStatus;
+          } else {
+            delete attendanceMap[email][selectedDate];
+            attendanceState = attendanceState.filter(a => !(a.studentEmail === email && a.clubId === clubId && a.date === selectedDate));
+          }
+          // Re-render full table to reset UI state properly
+          renderStaffAttendance();
+          renderAdminTable();
         }
       });
     });
@@ -1269,6 +1410,11 @@ function renderAdminTable() {
         <i class="fa-solid fa-trash-can"></i>
       </button>`;
 
+    // Calculate presence ratio
+    const studentAttendance = attendanceState.filter(a => a.studentEmail === booking.studentEmail && a.clubId === booking.clubId);
+    const presentCount = studentAttendance.filter(a => a.status === 'PRESENT').length;
+    const totalCount = studentAttendance.length;
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>
@@ -1295,8 +1441,10 @@ function renderAdminTable() {
         ${booking.skills ? `<span class="sop-cell-skills"><strong>Skills:</strong> ${escapeHtml(booking.skills)}</span>` : ''}
       </td>
       <td class="booking-time-cell" style="white-space:nowrap;font-size:0.8rem;color:var(--text-secondary)">${escapeHtml(booking.bookingTime || '—')}</td>
-      <td class="attendance-cell">
-        <input type="checkbox" class="attendance-checkbox" data-booking-id="${escapeHtml(booking.bookingId)}"${booking.attendance ? ' checked' : ''} />
+      <td class="attendance-cell" style="text-align: center; vertical-align: middle;">
+        <div class="attendance-ratio-badge" title="Present ${presentCount} out of ${totalCount} sessions">
+          ${presentCount} / ${totalCount}
+        </div>
       </td>
       <td class="actions-cell">
         <div class="action-btn-group">
@@ -1320,6 +1468,14 @@ function renderAdminTable() {
         name: booking.clubName, category: 'General',
         accentColor: 'var(--accent-teal)', icon: '🎟️'
       };
+      
+      // Close/hide registrations modal so ticket is visible
+      const modalRegistrations = document.getElementById('registrations-modal');
+      if (modalRegistrations) {
+        modalRegistrations.classList.remove('show');
+        modalRegistrations.style.display = 'none';
+      }
+
       renderTicket({
         name: booking.studentName, id: booking.studentId,
         branch: booking.studentBranch, year: booking.studentYear,
@@ -1329,32 +1485,12 @@ function renderAdminTable() {
     });
   });
 
-  adminTableBody.querySelectorAll('.attendance-checkbox').forEach(chk => {
-    chk.addEventListener('change', async (e) => {
-      const bId = e.target.getAttribute('data-booking-id');
-      const checked = e.target.checked;
-      const b = bookingsState.find(x => x.bookingId === bId);
-      if(b) { 
-        b.attendance = checked; 
-        try {
-          await fetch(`https://club2-di9s.onrender.com/api/bookings/${bId}/attendance`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ attendance: checked })
-          });
-        } catch(err) {
-          console.error('Failed to update attendance:', err);
-        }
-      }
-    });
-  });
-
   if (!isStaff) {
     adminTableBody.querySelectorAll('.btn-table-delete').forEach(btn => {
       btn.addEventListener('click', async () => {
         const bookingId = btn.getAttribute('data-booking-id');
         try {
-          const res = await fetch(`https://club2-di9s.onrender.com/api/bookings/${bookingId}`, {
+          const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`, {
             method: 'DELETE'
           });
           if (res.ok) {
@@ -1378,7 +1514,7 @@ async function renderAdminReportsList() {
   reportsTableBody.innerHTML = '';
   
   try {
-    const res = await fetch('https://club2-di9s.onrender.com/api/reports');
+    const res = await fetch(`${API_BASE_URL}/api/reports`);
     if (!res.ok) throw new Error('Failed to fetch reports');
     const reports = await res.json();
     
@@ -1410,7 +1546,7 @@ async function renderAdminReportsList() {
           <span style="color: var(--text-secondary); font-size: 0.9rem;">${date}</span>
         </td>
         <td>
-          <a href="https://club2-di9s.onrender.com${report.filePath}" download="${escapeHtml(report.fileName)}" class="btn btn-outline btn-sm" target="_blank">
+          <a href="${API_BASE_URL}${report.filePath}" download="${escapeHtml(report.fileName)}" class="btn btn-outline btn-sm" target="_blank">
             <i class="fa-solid fa-download"></i> Download
           </a>
         </td>
@@ -1452,7 +1588,7 @@ async function handleReportUpload(e) {
   if (loaderDesc) loaderDesc.textContent = 'Storing file on server...';
   
   try {
-    const res = await fetch('https://club2-di9s.onrender.com/api/reports', {
+    const res = await fetch(`${API_BASE_URL}/api/reports`, {
       method: 'POST',
       body: formData
     });
@@ -1461,6 +1597,15 @@ async function handleReportUpload(e) {
     
     showToast('Report Submitted', 'Your club activity report has been uploaded successfully.', 'success');
     fileInput.value = ''; // Reset input
+    
+    // Close report modal if open
+    const modalReport = document.getElementById('report-modal');
+    if (modalReport) {
+      modalReport.classList.remove('show');
+      setTimeout(() => {
+        modalReport.style.display = 'none';
+      }, 300);
+    }
   } catch (err) {
     console.error(err);
     showToast('Upload Failed', 'Could not upload report to the server.', 'error');
@@ -1603,7 +1748,77 @@ document.addEventListener('DOMContentLoaded', () => {
     reportForm.addEventListener('submit', handleReportUpload);
   }
 
-  // No longer needed, video auto-plays as background
+  // Modal toggle listeners
+  const btnShowRegistrations = document.getElementById('btn-show-registrations');
+  const btnShowReport = document.getElementById('btn-show-report');
+  const modalRegistrations = document.getElementById('registrations-modal');
+  const modalReport = document.getElementById('report-modal');
+  const btnCloseRegistrations = document.getElementById('close-registrations-modal');
+  const btnCloseReport = document.getElementById('close-report-modal');
+
+  if (btnShowRegistrations && modalRegistrations) {
+    btnShowRegistrations.addEventListener('click', async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/attendance`);
+        if (res.ok) {
+          attendanceState = await res.json();
+        }
+      } catch (e) {
+        console.warn('Could not refresh attendance for modal:', e);
+      }
+      renderAdminTable();
+      modalRegistrations.style.display = 'flex';
+      setTimeout(() => modalRegistrations.classList.add('show'), 10);
+    });
+  }
+  if (btnShowReport && modalReport) {
+    btnShowReport.addEventListener('click', () => {
+      modalReport.style.display = 'flex';
+      setTimeout(() => modalReport.classList.add('show'), 10);
+    });
+  }
+
+  const closeModal = (modal) => {
+    modal.classList.remove('show');
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 300);
+  };
+
+  if (btnCloseRegistrations && modalRegistrations) {
+    btnCloseRegistrations.addEventListener('click', () => closeModal(modalRegistrations));
+  }
+  if (btnCloseReport && modalReport) {
+    btnCloseReport.addEventListener('click', () => closeModal(modalReport));
+  }
+
+  // Close modal when clicking on overlay background
+  [modalRegistrations, modalReport].forEach(modal => {
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal(modal);
+      });
+    }
+  });
+
+  // Ticket view back button
+  const ticketBackBtn = document.getElementById('ticket-back-btn');
+  if (ticketBackBtn) {
+    ticketBackBtn.addEventListener('click', () => {
+      if (currentUser) {
+        switchView('admin');
+        if (currentUser.role === 'staff') {
+          const modalRegistrations = document.getElementById('registrations-modal');
+          if (modalRegistrations) {
+            modalRegistrations.style.display = 'flex';
+            setTimeout(() => modalRegistrations.classList.add('show'), 10);
+          }
+        }
+      } else {
+        switchView('overview');
+      }
+    });
+  }
 
 });
 
@@ -1611,6 +1826,39 @@ document.addEventListener('DOMContentLoaded', () => {
 // 10. APP STARTUP
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Check for general staff URL redirect
+  if (window.location.pathname === '/staff' || window.location.pathname === '/staff/' || window.location.hash === '#staff' || window.location.hash === '#staff/') {
+    if (window.location.pathname.startsWith('/staff')) {
+      window.history.replaceState({}, '', '/');
+    } else {
+      window.location.hash = '';
+    }
+    switchView('login');
+    showToast('Staff Portal', 'Please log in with your club staff credentials.', 'info');
+  }
+
+  // Check for staff URL redirect
+  if (window.location.pathname === '/staff/petclubcoordinator' || window.location.hash === '#staff/petclubcoordinator') {
+    currentUser = {
+      email: 'pets@snsct.org',
+      name: 'Pets Coordinator',
+      id: 'STAFF',
+      role: 'staff',
+      clubId: 'pets'
+    };
+    localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
+    updateAuthUI();
+    
+    if (window.location.pathname === '/staff/petclubcoordinator') {
+      window.history.replaceState({}, '', '/');
+    } else if (window.location.hash === '#staff/petclubcoordinator') {
+      window.location.hash = '';
+    }
+    
+    switchView('admin');
+    showToast('Staff Portal', 'Logged in as Pets Coordinator via /staff/petclubcoordinator.', 'success');
+  }
+
   // Check for admin URL redirect
   if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
     currentUser = {
@@ -1635,10 +1883,108 @@ document.addEventListener('DOMContentLoaded', () => {
   initDatabase();
   renderOverviewGrid();
 
+  // Initialize Custom Select for Category Filter
+  customCategoryFilter = createCustomSelect(categoryFilter);
+
   // Set initial checkbox values matching global JS flags
   raceConditionCheckbox.checked = simulatedRaceCondition;
   latencyCheckbox.checked = simulatedLatency;
 });
+
+// ==========================================
+// 11. HELPER: CUSTOM SELECT COMPONENT
+// ==========================================
+function createCustomSelect(selectEl) {
+  // Hide native select
+  selectEl.style.display = 'none';
+
+  // Create wrapper
+  const wrapper = document.createElement('div');
+  wrapper.className = 'custom-select-wrapper';
+  
+  // Create trigger
+  const trigger = document.createElement('div');
+  trigger.className = 'custom-select-trigger';
+  
+  const triggerText = document.createElement('span');
+  const activeOption = selectEl.options[selectEl.selectedIndex];
+  triggerText.textContent = activeOption ? activeOption.textContent : '';
+  
+  const triggerIcon = document.createElement('i');
+  triggerIcon.className = 'fa-solid fa-chevron-down';
+  
+  trigger.appendChild(triggerText);
+  trigger.appendChild(triggerIcon);
+  wrapper.appendChild(trigger);
+  
+  // Create options container
+  const optionsContainer = document.createElement('div');
+  optionsContainer.className = 'custom-select-options';
+  wrapper.appendChild(optionsContainer);
+
+  const rebuildOptions = () => {
+    optionsContainer.innerHTML = '';
+    const activeOpt = selectEl.options[selectEl.selectedIndex];
+    triggerText.textContent = activeOpt ? activeOpt.textContent : '';
+
+    Array.from(selectEl.options).forEach(opt => {
+      const optDiv = document.createElement('div');
+      optDiv.className = 'custom-select-option';
+      if (opt.selected) optDiv.classList.add('selected');
+      optDiv.textContent = opt.textContent;
+      optDiv.dataset.value = opt.value;
+      
+      optDiv.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectEl.value = opt.value;
+        triggerText.textContent = opt.textContent;
+        
+        optionsContainer.querySelectorAll('.custom-select-option').forEach(child => {
+          child.classList.remove('selected');
+        });
+        optDiv.classList.add('selected');
+        wrapper.classList.remove('open');
+        
+        selectEl.dispatchEvent(new Event('change'));
+      });
+      
+      optionsContainer.appendChild(optDiv);
+    });
+  };
+
+  rebuildOptions();
+  
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.custom-select-wrapper').forEach(other => {
+      if (other !== wrapper) other.classList.remove('open');
+    });
+    wrapper.classList.toggle('open');
+  });
+  
+  document.addEventListener('click', () => {
+    wrapper.classList.remove('open');
+  });
+  
+  selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
+  
+  return {
+    rebuild: rebuildOptions,
+    syncValue: (val) => {
+      const targetOption = Array.from(selectEl.options).find(o => o.value === val);
+      if (targetOption) {
+        triggerText.textContent = targetOption.textContent;
+      }
+      Array.from(optionsContainer.children).forEach(child => {
+        if (child.dataset.value === val) {
+          child.classList.add('selected');
+        } else {
+          child.classList.remove('selected');
+        }
+      });
+    }
+  };
+}
 
 
 

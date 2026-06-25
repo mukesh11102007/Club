@@ -177,6 +177,18 @@ app.post('/api/reports', upload.single('report'), async (req, res) => {
 });
 
 
+// Get all attendance records (optional filter by clubId)
+app.get('/api/attendance', async (req, res) => {
+  try {
+    const { clubId } = req.query;
+    const filter = clubId ? { clubId } : {};
+    const records = await Attendance.find(filter).sort({ date: -1 });
+    res.json(records);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get attendance records for a club
 app.get('/api/attendance/:clubId', async (req, res) => {
   try {
