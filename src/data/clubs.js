@@ -7,6 +7,7 @@ export const CLUBS_DATA = [
     description: "Rotaract Club brings together young professionals and students to address their community's physical and social needs. Through fundraising, blood donation drives, environmental cleanups, and local educational mentorship programs, we foster a spirit of service and civic responsibility while developing invaluable project management and leadership skills.",
     accentColor: "linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)",
     logoUrl: "/clublogos/rotaract.png",
+    coverUrl: "/cover_images/Rotaract.png",
     coordinator: { name: "Dr. Priya Shankar", title: "Faculty Coordinator", dept: "Civil Engineering" }
   },
   {
@@ -28,6 +29,7 @@ export const CLUBS_DATA = [
     description: "Unplug from academic stress and discover the great outdoors with the Travel & Trek Club. We plan weekend hikes, mountain treks, nature photography tours, and outdoor camping trips. Our club teaches navigation, wilderness safety, environmental preservation (Leave No Trace principles), and fosters deep bonds through adventure.",
     accentColor: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
     logoUrl: "/clublogos/Travel%20trek.png",
+    coverUrl: "/cover_images/Travel Trek.jpeg",
     coordinator: { name: "Dr. Suresh Kumar", title: "Faculty Coordinator", dept: "Physical Education" }
   },
   {
@@ -38,6 +40,7 @@ export const CLUBS_DATA = [
     description: "Gear Shifters is the ultimate hub for gearheads and aspiring automotive engineers. We organize workshops on combustion engines, electric vehicle (EV) powertrains, aerodynamics, and car design. Join us for go-karting trips, Formula Student project collaborations, and trips to auto expos.",
     accentColor: "linear-gradient(135deg, #3a7bd5 0%, #3a6073 100%)",
     logoUrl: "/clublogos/Gear%20shifters.png",
+    coverUrl: "/cover_images/Gear Shifters.jpeg",
     coordinator: { name: "Dr. Karthik Raj", title: "Faculty Coordinator", dept: "Mechanical Engineering" }
   },
   {
@@ -48,6 +51,7 @@ export const CLUBS_DATA = [
     description: "Arts with Hearts is a creative community that uses painting, sketching, pottery, and street murals to support social causes. We host therapeutic art workshops, organize charity art auctions, and paint public spaces to raise awareness on mental health, education, and equality.",
     accentColor: "linear-gradient(135deg, #FC466B 0%, #3F5EFB 100%)",
     logoUrl: "/clublogos/arts%20with%20hearts.png",
+    coverUrl: "/cover_images/Arts%20with%20Hearts.png",
     coordinator: { name: "Prof. Lavanya M.", title: "Faculty Coordinator", dept: "Fine Arts" }
   },
   {
@@ -58,6 +62,7 @@ export const CLUBS_DATA = [
     description: "Why wait for December to spread joy? Santa 365 operates year-round to deliver kindness, relief kits, toys, and educational books to underprivileged children and families. We partner with local orphanages, coordinate night shelter support, and run dynamic donation drives to make giving a daily habit.",
     accentColor: "linear-gradient(135deg, #e52d27 0%, #b31217 100%)",
     logoUrl: "/clublogos/santa%20365.png",
+    coverUrl: "/cover_images/Santa%20365.png",
     coordinator: { name: "Dr. Vijayalakshmi S.", title: "Faculty Coordinator", dept: "Social Sciences" }
   },
   {
@@ -79,6 +84,7 @@ export const CLUBS_DATA = [
     description: "Toast Masters is a globally affiliated chapter dedicated to communication excellence. We practice impromptu speaking (Table Topics), prepared speeches, constructive evaluations, and debate tactics. Our supportive environment helps members build executive presence and professional confidence.",
     accentColor: "linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)",
     logoUrl: "/clublogos/ToastMasters.png",
+    coverUrl: "/cover_images/Toast masters .jpeg",
     coordinator: { name: "Prof. Anitha J.", title: "Faculty Coordinator", dept: "English & Languages" }
   },
   {
@@ -110,6 +116,7 @@ export const CLUBS_DATA = [
     description: "IMUN simulates the United Nations committees, challenging students to research global issues, write resolutions, draft position papers, and negotiate solutions to real-world geopolitics. Perfect for enhancing critical thinking, negotiation, research, and global policy awareness.",
     accentColor: "linear-gradient(135deg, #1f4068 0%, #162447 100%)",
     logoUrl: "/clublogos/imun.png",
+    coverUrl: "/cover_images/IMUN.png",
     coordinator: { name: "Dr. Shantha G.", title: "Faculty Coordinator", dept: "Political Science" }
   },
   {
@@ -120,6 +127,7 @@ export const CLUBS_DATA = [
     description: "YEC is the incubation mindset engine of our campus. We guide students through startup ideation, business canvas planning, venture capital pitches, and legal foundations. Our annual Startup Expo hosts angel investors and mentors who help launch real-world student ventures.",
     accentColor: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
     logoUrl: "/clublogos/Young%20Entrepreneur.png",
+    coverUrl: "/cover_images/Young Entrepreneur.jpeg",
     coordinator: { name: "Dr. Mani K.", title: "Faculty Coordinator", dept: "Business Administration" }
   },
   {
@@ -130,6 +138,7 @@ export const CLUBS_DATA = [
     description: "Foodies Hub is for the passionate gastronomer. We host amateur baking and cooking classes, review local food establishments, explore street food history, and debate culinary styles. We also advocate for food security by organizing campus food redistribution drives for local shelters.",
     accentColor: "linear-gradient(135deg, #F09819 0%, #EDDE5D 100%)",
     logoUrl: "/clublogos/Foodies%20Club.png",
+    coverUrl: "/cover_images/Foodies Hub.jpeg",
     coordinator: { name: "Prof. Saravanan C.", title: "Faculty Coordinator", dept: "Hotel Management" }
   },
   {
@@ -151,6 +160,7 @@ export const CLUBS_DATA = [
     description: "Fashion Studio is a creative workshop for fashion design, styling, and runway modeling. We study apparel design, sustainability in fashion, and makeup arts. The club organizes the annual campus fashion runway show, highlighting themes of diversity and eco-friendly upcycled fashion.",
     accentColor: "linear-gradient(135deg, #DA22FF 0%, #9733EE 100%)",
     logoUrl: "/clublogos/fashion.png",
+    coverUrl: "/cover_images/Fashion%20club.png",
     coordinator: { name: "Prof. Sindhu A.", title: "Faculty Coordinator", dept: "Fashion Technology" }
   },
   {
@@ -172,6 +182,7 @@ export const CLUBS_DATA = [
     description: "Rhythm Lounge is the acoustic heartbeat of campus. Whether you play the drums, guitar, classical sitar, sing, or write electronic music, we host open jams, rock concerts, classical recitals, and music production masterclasses. Join our bands or jam casually!",
     accentColor: "linear-gradient(135deg, #8A2387 0%, #E94057 50%, #F27121 100%)",
     logoUrl: "/clublogos/music%20club.png",
+    coverUrl: "/cover_images/Music.png",
     coordinator: { name: "Prof. Arun K.", title: "Faculty Coordinator", dept: "Music & Performing Arts" }
   },
   {
