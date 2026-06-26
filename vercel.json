@@ -9,5 +9,19 @@
       "routePrefix": "/_/backend",
       "entrypoint": "server.js"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/staff",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/staff/:path*",
+      "destination": "/index.html"
+    }
+  ]
 }
