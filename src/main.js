@@ -22,10 +22,10 @@ let attendanceState = [];
 // ==========================================
 // No pre-seeded demo accounts; students will register themselves
 
-let clubsState = [];
+const MAX_SLOTS = 110; // Updated club capacity
+let clubsState = CLUBS_DATA.map(club => ({ ...club, slotsRemaining: MAX_SLOTS }));
 let usersState = [];
 let bookingsState = [];
-const MAX_SLOTS = 110; // Updated club capacity
 let intendedClubId = null;
 let selectedClubId = null;
 let currentUser = null;
@@ -1880,8 +1880,9 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('Admin Portal', 'Logged in as administrator via /admin.', 'success');
   }
 
-  initDatabase();
+  updateAggregateCounters();
   renderOverviewGrid();
+  initDatabase();
 
   // Initialize Custom Select for Category Filter
   customCategoryFilter = createCustomSelect(categoryFilter);
