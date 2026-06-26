@@ -2698,11 +2698,21 @@ body {
 /* Responsive for club detail */
 @media (max-width: 992px) {
   .club-detail-body {
-    grid-template-columns: 1fr;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem;
   }
+  .club-detail-main,
   .club-detail-sidebar {
-    order: -1;
+    display: contents !important;
   }
+  /* Reorder sections on mobile: About -> Rules -> Coordinator -> Gain */
+  .club-detail-main .club-detail-section:first-child { order: 1 !important; }
+  .club-detail-sidebar .info-card { order: 2 !important; }
+  .club-detail-sidebar .coordinator-card { order: 3 !important; }
+  .club-detail-main .club-detail-section:nth-child(2) { order: 4 !important; }
+  .club-detail-sidebar .register-cta-btn { order: 5 !important; }
+
   .gain-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -3201,11 +3211,43 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator:hover {
   /* Compact padding for mobile viewports */
   .main-content {
     padding: 16px 12px 40px 12px !important;
+    overflow-x: hidden;
+  }
+
+  /* Make cover images fit in mobile without cropping */
+  .club-detail-hero, .club-card-header {
+    background-size: contain !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+  }
+  
+  .hero-bg-img {
+    object-fit: contain !important;
   }
 
   /* Compact glass card padding */
   .glass-card {
     padding: 16px !important;
+  }
+
+  /* Hero Banner Fixes for Mobile */
+  .hero-banner {
+    padding: 30px 20px !important;
+    height: auto !important;
+    min-height: 320px !important;
+    justify-content: center !important;
+  }
+  
+  .hero-text-content {
+    align-items: center !important;
+    text-align: center !important;
+    width: 100% !important;
+  }
+  
+  .hero-stats {
+    justify-content: center !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
   }
 
   /* Form spacing layout fixes */
@@ -3261,13 +3303,14 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator:hover {
     flex-direction: column !important;
     align-items: stretch !important;
     width: 100% !important;
-    gap: 10px !important;
+    gap: 12px !important;
   }
   .controls-inputs .form-input,
   .controls-inputs select,
   .controls-inputs button {
     max-width: 100% !important;
     width: 100% !important;
+    margin-bottom: 4px !important;
   }
 
   /* Modal responsiveness */
@@ -3280,6 +3323,18 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator:hover {
   /* Club detail hero image overlay for vertical stack */
   .hero-overlay {
     background: linear-gradient(180deg, rgba(10, 10, 15, 0.6) 0%, rgba(10, 10, 15, 0.95) 100%) !important;
+  }
+  
+  .club-detail-hero {
+    padding: 2rem 1.2rem !important;
+    text-align: center !important;
+    border-radius: 12px !important;
+  }
+  
+  .club-detail-hero-content {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 1rem !important;
   }
 }
 
