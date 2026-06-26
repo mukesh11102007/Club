@@ -3213,16 +3213,9 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator:hover {
     padding: 16px 12px 40px 12px !important;
     overflow-x: hidden;
   }
-
-  /* Make cover images fit in mobile without cropping */
-  .club-detail-hero, .club-card-header {
-    background-size: contain !important;
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-  }
   
   .hero-bg-img {
-    object-fit: contain !important;
+    object-fit: cover !important;
   }
 
   /* Compact glass card padding */
