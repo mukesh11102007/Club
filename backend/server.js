@@ -81,6 +81,28 @@ app.put('/api/clubs/:id/slots', async (req, res) => {
   }
 });
 
+// Reset all clubs slots
+app.put('/api/clubs/reset-all', async (req, res) => {
+  try {
+    const { capacity } = req.body;
+    await Club.updateMany({}, { slotsRemaining: capacity || 100 });
+    const clubs = await Club.find();
+    res.json(clubs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Erase all bookings
+app.delete('/api/bookings/all', async (req, res) => {
+  try {
+    await Booking.deleteMany({});
+    res.json({ message: 'All bookings erased successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all bookings
 app.get('/api/bookings', async (req, res) => {
   try {

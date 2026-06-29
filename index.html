@@ -704,9 +704,31 @@
               </button>
               <span class="navigation-context">Home / Admin Dashboard</span>
             </div>
-            <button id="concurrency-toggle-btn" class="btn btn-outline btn-sm">
-              <i class="fa-solid fa-bolt-lightning"></i> Concurrency Control
-            </button>
+            <div style="display: flex; gap: 10px;">
+              <button id="concurrency-toggle-btn" class="btn btn-outline btn-sm">
+                <i class="fa-solid fa-bolt-lightning"></i> Concurrency Control
+              </button>
+              <div class="dropdown-wrapper" style="position: relative;" id="admin-reset-wrapper">
+                <button id="admin-reset-toggle-btn" class="btn btn-danger btn-sm" style="background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border-color: rgba(255, 77, 77, 0.2);">
+                  <i class="fa-solid fa-triangle-exclamation"></i> Danger Zone <i class="fa-solid fa-caret-down" style="margin-left: 5px;"></i>
+                </button>
+                <div id="admin-reset-menu" class="profile-dropdown" style="display: none; right: 0; top: 100%; margin-top: 5px;">
+                  <button id="reset-all-slots-btn" class="dropdown-item">
+                    <i class="fa-solid fa-rotate-left"></i> Reset All Slots (to 100)
+                  </button>
+                  <button id="reset-club-slots-btn" class="dropdown-item">
+                    <i class="fa-solid fa-crosshairs"></i> Reset Specific Club Slots
+                  </button>
+                  <button id="set-custom-slots-btn" class="dropdown-item">
+                    <i class="fa-solid fa-sliders"></i> Set Custom Capacity
+                  </button>
+                  <div class="dropdown-divider"></div>
+                  <button id="erase-all-bookings-btn" class="dropdown-item logout-item">
+                    <i class="fa-solid fa-trash-can"></i> Erase All Bookings
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Stats Bar -->

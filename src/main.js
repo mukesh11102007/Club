@@ -903,6 +903,84 @@ concurrencyToggleBtn.addEventListener('click', () => {
   concurrencyPanel.classList.toggle('collapsed');
 });
 
+const adminResetToggleBtn = document.getElementById('admin-reset-toggle-btn');
+const adminResetMenu = document.getElementById('admin-reset-menu');
+
+if (adminResetToggleBtn && adminResetMenu) {
+  adminResetToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    adminResetMenu.style.display = adminResetMenu.style.display === 'block' ? 'none' : 'block';
+  });
+
+  document.addEventListener('click', () => {
+    adminResetMenu.style.display = 'none';
+  });
+
+  document.getElementById('reset-all-slots-btn').addEventListener('click', async () => {
+    if (!confirm("Are you sure you want to reset ALL clubs to 100 slots?")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/clubs/reset-all`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ capacity: 100 }) });
+      if (!res.ok) throw new Error('Failed to reset');
+      clubsState = await res.json();
+      saveDatabase();
+      if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
+      if (typeof renderClubs === 'function') renderClubs();
+      showToast('Success', 'All clubs have been reset to 100 slots.', 'success');
+    } catch (err) {
+      showToast('Error', err.message, 'error');
+    }
+  });
+
+  document.getElementById('reset-club-slots-btn').addEventListener('click', async () => {
+    const clubId = prompt("Enter the ID of the club (e.g., 'robotics', 'arts-with-hearts'):");
+    if (!clubId) return;
+    const clubExists = clubsState.some(c => c.id === clubId);
+    if (!clubExists) return showToast('Error', 'Club not found.', 'error');
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/clubs/${clubId}/slots`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ slotsRemaining: 100 }) });
+      if (!res.ok) throw new Error('Failed to reset');
+      await initDatabase();
+      if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
+      if (typeof renderClubs === 'function') renderClubs();
+      showToast('Success', `${clubId} reset to 100 slots.`, 'success');
+    } catch (err) {
+      showToast('Error', err.message, 'error');
+    }
+  });
+
+  document.getElementById('set-custom-slots-btn').addEventListener('click', async () => {
+    const capStr = prompt("Enter custom slot capacity for all clubs:");
+    if (!capStr) return;
+    const capacity = parseInt(capStr);
+    if (isNaN(capacity) || capacity < 0) return showToast('Error', 'Invalid capacity.', 'error');
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/clubs/reset-all`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ capacity }) });
+      if (!res.ok) throw new Error('Failed to set capacity');
+      clubsState = await res.json();
+      saveDatabase();
+      if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
+      if (typeof renderClubs === 'function') renderClubs();
+      showToast('Success', `All clubs capacity set to ${capacity}.`, 'success');
+    } catch (err) {
+      showToast('Error', err.message, 'error');
+    }
+  });
+
+  document.getElementById('erase-all-bookings-btn').addEventListener('click', async () => {
+    if (!confirm("WARNING: This will delete ALL registrations forever. Are you sure?")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/bookings/all`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to erase bookings');
+      if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
+      showToast('Success', 'All bookings have been erased.', 'success');
+    } catch (err) {
+      showToast('Error', err.message, 'error');
+    }
+  });
+}
+
 panelCloseBtn.addEventListener('click', () => {
   concurrencyPanel.classList.add('collapsed');
 });
