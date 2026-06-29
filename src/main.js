@@ -281,22 +281,39 @@ function switchView(viewName) {
 
   // Small delay for fade transitions
   setTimeout(() => {
-    views[viewName].classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      if (!views[viewName]) {
+        alert("CRITICAL ERROR: view '" + viewName + "' does not exist in the DOM!");
+        return;
+      }
+      views[viewName].classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(err) {
+      alert("Error in setTimeout: " + err.message);
+    }
   }, 100);
 
 
 
   // Manage navbar actions visibility (only show search/filter on Overview)
   if (viewName === 'overview') {
-    navbarActions.style.display = 'flex';
+    if (navbarActions) navbarActions.style.display = 'flex';
   } else {
-    navbarActions.style.display = 'none';
+    if (navbarActions) navbarActions.style.display = 'none';
   }
 
   // If opening admin view, render the dashboard
   if (viewName === 'admin') {
-    renderAdminDashboard();
+    try {
+      const p = renderAdminDashboard();
+      if (p && p.catch) {
+        p.catch(err => {
+          alert("Error inside async renderAdminDashboard: " + err.message);
+        });
+      }
+    } catch(err) {
+      alert("Error calling renderAdminDashboard: " + err.message);
+    }
   }
   
   // Show/hide ticket back button on confirmation view
