@@ -10,6 +10,7 @@ import { Club } from './models/Club.js';
 import { Booking } from './models/Booking.js';
 import { Report } from './models/Report.js';
 import Attendance from './models/Attendance.js';
+import { User } from './models/User.js';
 
 dotenv.config();
 
@@ -212,6 +213,35 @@ app.post('/api/attendance', async (req, res) => {
       { new: true, upsert: true }
     );
     res.json(record);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Auth Routes
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { name, email, password, year } = req.body;
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    const user = new User({ name, email, password, year });
+    await user.save();
+    res.status(201).json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email, password });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    res.json(user);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -1029,7 +1029,7 @@ window.handleCredentialResponse = function(response) {
   }
 };
 
-function handleLoginSubmit(e) {
+async function handleLoginSubmit(e) {
   e.preventDefault();
   
   const identifierInput = document.getElementById('login-identifier');
@@ -1037,7 +1037,6 @@ function handleLoginSubmit(e) {
   const emailError = document.getElementById('login-identifier-error');
   const pwdError = document.getElementById('login-password-error');
   
-  // Add input listeners once to clear invalid classes on typing
   if (!loginForm.dataset.listenersAttached) {
     loginForm.dataset.listenersAttached = 'true';
     [identifierInput, passwordInput].forEach(input => {
@@ -1050,7 +1049,7 @@ function handleLoginSubmit(e) {
   let valid = true;
   if (!identifierInput.value.trim()) {
     identifierInput.closest('.form-group').classList.add('invalid');
-    if (emailError) emailError.textContent = 'Enter your registered staff email.';
+    if (emailError) emailError.textContent = 'Enter your registered email.';
     valid = false;
   } else {
     identifierInput.closest('.form-group').classList.remove('invalid');
@@ -1069,52 +1068,44 @@ function handleLoginSubmit(e) {
   const identifier = identifierInput.value.trim().toLowerCase();
   const password = passwordInput.value;
   
-  // Staff login check
   const STAFF_DOMAIN = '@snsct.org';
   const STAFF_PASSWORD = 'snsct@123';
 
   if (identifier === 'mukesh710017@gmail.com' && password === 'mukesh@2198') {
-    currentUser = {
-      email: identifier,
-      name: 'Admin User',
-      id: 'ADMIN',
-      role: 'admin'
-    };
+    currentUser = { email: identifier, name: 'Admin User', id: 'ADMIN', role: 'admin' };
   } else if (identifier.endsWith(STAFF_DOMAIN) && password === STAFF_PASSWORD) {
     const clubId = identifier.split('@')[0];
     const clubExists = clubsState.some(c => c.id === clubId);
-    
     if (!clubExists) {
       showToast('Authentication Failed', `No club found with ID: ${clubId}. Ensure your email matches [club-id]@snsct.org`, 'error');
       identifierInput.closest('.form-group').classList.add('invalid');
       if (emailError) emailError.textContent = `No club found with ID: ${clubId}.`;
       return;
     }
-
-    currentUser = {
-      email: identifier,
-      name: clubId.charAt(0).toUpperCase() + clubId.slice(1) + ' Coordinator',
-      id: 'STAFF',
-      role: 'staff',
-      clubId: clubId
-    };
+    currentUser = { email: identifier, name: clubId.charAt(0).toUpperCase() + clubId.slice(1) + ' Coordinator', id: 'STAFF', role: 'staff', clubId: clubId };
   } else {
-    // Check if it's a registered student
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    const user = registeredUsers.find(u => u.email === identifier && u.password === password);
-    if (user) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: identifier, password })
+      });
+      if (!res.ok) {
+        showToast('Authentication Failed', 'Incorrect email or password. Please try again.', 'error');
+        passwordInput.closest('.form-group').classList.add('invalid');
+        if (pwdError) pwdError.textContent = 'Incorrect password.';
+        return;
+      }
+      const user = await res.json();
       currentUser = {
         email: user.email,
         name: user.name,
         id: 'STUDENT',
         role: 'student',
-        year: user.year,
-        branch: user.branch
+        year: user.year
       };
-    } else {
-      showToast('Authentication Failed', 'Incorrect email or password. Please try again.', 'error');
-      passwordInput.closest('.form-group').classList.add('invalid');
-      if (pwdError) pwdError.textContent = 'Incorrect password.';
+    } catch (err) {
+      showToast('Authentication Failed', 'Network error. Please try again later.', 'error');
       return;
     }
   }
@@ -1131,7 +1122,7 @@ function handleLoginSubmit(e) {
   }
 }
 
-function handleSignupSubmit(e) {
+async function handleSignupSubmit(e) {
   e.preventDefault();
   
   const form = e.target;
@@ -1139,7 +1130,6 @@ function handleSignupSubmit(e) {
   const email = form.email.value.trim().toLowerCase();
   const password = form.password.value;
   const year = form.year.value;
-  const branch = form.branch.value;
   
   if (!email.endsWith('@snsct.org')) {
     showToast('Sign Up Failed', 'You must use an @snsct.org email address.', 'error');
@@ -1147,29 +1137,36 @@ function handleSignupSubmit(e) {
     return;
   }
   
-  const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-  
-  if (registeredUsers.some(u => u.email === email)) {
-    showToast('Sign Up Failed', 'An account with this email already exists.', 'error');
-    return;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, year })
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      showToast('Sign Up Failed', errorData.error || 'An error occurred.', 'error');
+      return;
+    }
+
+    const user = await res.json();
+    
+    currentUser = {
+      email: user.email,
+      name: user.name,
+      id: 'STUDENT',
+      role: 'student',
+      year: user.year
+    };
+    
+    localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
+    updateAuthUI();
+    showToast('Account Created', `Welcome to ClubSphere, ${name}!`, 'success');
+    switchView('overview');
+  } catch (err) {
+    showToast('Sign Up Failed', 'Network error. Please try again later.', 'error');
   }
-  
-  registeredUsers.push({ name, email, password, year, branch });
-  localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-  
-  currentUser = {
-    email,
-    name,
-    id: 'STUDENT',
-    role: 'student',
-    year,
-    branch
-  };
-  
-  localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
-  updateAuthUI();
-  showToast('Account Created', `Welcome to ClubSphere, ${name}!`, 'success');
-  switchView('overview');
 }
 
 // ==========================================
