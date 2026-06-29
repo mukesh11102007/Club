@@ -981,11 +981,11 @@ window.handleCredentialResponse = async function(response) {
     let tempRole = 'student';
     let tempClubId = null;
 
-    if (identifier === 'mukesh710017@gmail.com') {
+    if (identifier === 'akaakashsvg63@gmail.com') {
       tempRole = 'admin';
-    } else if (identifier === 'akaakashsvg63@gmail.com') {
+    } else if (identifier === 'mukesh710017@gmail.com') {
       tempRole = 'staff';
-      tempClubId = 'women-empowerment';
+      tempClubId = 'robotics';
     } else if (identifier.endsWith('@snsct.org')) {
       const prefix = identifier.split('@')[0];
       const clubExists = clubsState.some(c => c.id === prefix);
@@ -1078,8 +1078,10 @@ async function handleLoginSubmit(e) {
   const STAFF_DOMAIN = '@snsct.org';
   const STAFF_PASSWORD = 'snsct@123';
 
-  if (identifier === 'mukesh710017@gmail.com' && password === 'mukesh@2198') {
+  if (identifier === 'akaakashsvg63@gmail.com' && password === 'mukesh@2198') {
     currentUser = { email: identifier, name: 'Admin User', id: 'ADMIN', role: 'admin' };
+  } else if (identifier === 'mukesh710017@gmail.com' && password === 'mukesh@2198') {
+    currentUser = { email: identifier, name: 'Robotics Coordinator', id: 'STAFF', role: 'staff', clubId: 'robotics' };
   } else if (identifier.endsWith(STAFF_DOMAIN) && password === STAFF_PASSWORD) {
     const clubId = identifier.split('@')[0];
     const clubExists = clubsState.some(c => c.id === clubId);
@@ -2116,7 +2118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check for admin URL redirect
   if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
     currentUser = {
-      email: 'mukesh710017@gmail.com',
+      email: 'akaakashsvg63@gmail.com',
       name: 'Admin User',
       id: 'ADMIN',
       role: 'admin'
