@@ -1066,7 +1066,7 @@ window.handleCredentialResponse = async function(response) {
       tempClubId = 'robotics';
     } else if (identifier.endsWith('@snsct.org')) {
       const prefix = identifier.split('@')[0];
-      const clubExists = clubsState.some(c => c.id === prefix);
+      const clubExists = clubsState && clubsState.some(c => c.id === prefix);
       if (clubExists) {
         tempRole = 'staff';
         tempClubId = prefix;
@@ -1086,19 +1086,25 @@ window.handleCredentialResponse = async function(response) {
           role: tempRole
         })
       });
-      if (!res.ok) throw new Error('Database sync failed');
+      if (!res.ok) {
+        console.warn('Backend returned non-ok status for Google Auth');
+      }
     } catch (dbErr) {
       console.warn("Could not sync with MongoDB, continuing with local session", dbErr);
     }
 
-    currentUser = {
+    let newUserSession = {
       email: identifier,
       name: payload.name || (tempRole === 'staff' ? 'Coordinator' : 'Student'),
       id: tempRole.toUpperCase(),
-      role: tempRole,
-      ...(tempClubId && { clubId: tempClubId })
+      role: tempRole
     };
 
+    if (tempClubId) {
+      newUserSession.clubId = tempClubId;
+    }
+
+    currentUser = newUserSession;
     localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
     updateAuthUI();
     showToast('Login Successful', `Welcome, ${currentUser.name}!`, 'success');
@@ -1110,7 +1116,7 @@ window.handleCredentialResponse = async function(response) {
     }
   } catch(error) {
     console.error("Error decoding Google credential:", error);
-    showToast('Authentication Failed', 'Invalid Google token.', 'error');
+    showToast('Authentication Failed', 'Invalid Google token or network error.', 'error');
   }
 };
 
