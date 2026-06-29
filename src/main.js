@@ -977,8 +977,6 @@ window.handleCredentialResponse = function(response) {
 
     const payload = JSON.parse(jsonPayload);
     const identifier = payload.email.toLowerCase();
-    
-    const STAFF_DOMAIN = '@snsct.org';
 
     if (identifier === 'mukesh710017@gmail.com') {
       currentUser = {
@@ -995,29 +993,28 @@ window.handleCredentialResponse = function(response) {
         role: 'staff',
         clubId: 'women-empowerment'
       };
-    } else if (identifier.endsWith(STAFF_DOMAIN)) {
-      const clubId = identifier.split('@')[0];
-      const clubExists = clubsState.some(c => c.id === clubId);
-      
-      if (!clubExists) {
-        showToast('Authentication Failed', `No club found with ID: ${clubId}. Ensure your email matches [club-id]@snsct.org`, 'error');
-        return;
-      }
-
-      currentUser = {
-        email: identifier,
-        name: payload.name || (clubId.charAt(0).toUpperCase() + clubId.slice(1) + ' Coordinator'),
-        id: 'STAFF',
-        role: 'staff',
-        clubId: clubId
-      };
     } else if (identifier.endsWith('@snsct.org')) {
-      currentUser = {
-        email: identifier,
-        name: payload.name || 'Student',
-        id: 'STUDENT',
-        role: 'student'
-      };
+      const prefix = identifier.split('@')[0];
+      const clubExists = clubsState.some(c => c.id === prefix);
+      
+      if (clubExists) {
+        // Staff Login
+        currentUser = {
+          email: identifier,
+          name: payload.name || (prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' Coordinator'),
+          id: 'STAFF',
+          role: 'staff',
+          clubId: prefix
+        };
+      } else {
+        // Student Login
+        currentUser = {
+          email: identifier,
+          name: payload.name || 'Student',
+          id: 'STUDENT',
+          role: 'student'
+        };
+      }
     } else {
       showToast('Authentication Failed', 'Only @snsct.org email addresses are allowed to log in.', 'error');
       return;
