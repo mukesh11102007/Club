@@ -936,7 +936,7 @@ window.handleCredentialResponse = function(response) {
         id: 'ADMIN',
         role: 'admin'
       };
-    } else if (identifier === 'akaakashsvg63@gmail.com') {
+    } else if (identifier === 'akaakashsvg63@gmail.com' || identifier === 'aakashsvg63@gmail.com') {
       currentUser = {
         email: identifier,
         name: payload.name || 'Women Empowerment Coordinator',
@@ -961,7 +961,7 @@ window.handleCredentialResponse = function(response) {
         clubId: clubId
       };
     } else {
-      showToast('Authentication Failed', 'Unauthorized Google account.', 'error');
+      showToast('Authentication Failed', `Unauthorized Google account: ${identifier}`, 'error');
       return;
     }
 
