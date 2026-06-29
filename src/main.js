@@ -1002,13 +1002,16 @@ window.handleCredentialResponse = function(response) {
         role: 'staff',
         clubId: clubId
       };
-    } else {
+    } else if (identifier.endsWith('@snsct.org')) {
       currentUser = {
         email: identifier,
         name: payload.name || 'Student',
         id: 'STUDENT',
         role: 'student'
       };
+    } else {
+      showToast('Authentication Failed', 'Only @snsct.org email addresses are allowed to log in.', 'error');
+      return;
     }
 
     localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
