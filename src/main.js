@@ -1099,17 +1099,77 @@ function handleLoginSubmit(e) {
       clubId: clubId
     };
   } else {
-    // Only allow staff/admin login from the form
-    showToast('Authentication Failed', 'Incorrect email or password. Please try again.', 'error');
-    passwordInput.closest('.form-group').classList.add('invalid');
-    if (pwdError) pwdError.textContent = 'Incorrect password.';
-    return;
+    // Check if it's a registered student
+    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    const user = registeredUsers.find(u => u.email === identifier && u.password === password);
+    if (user) {
+      currentUser = {
+        email: user.email,
+        name: user.name,
+        id: 'STUDENT',
+        role: 'student',
+        year: user.year,
+        branch: user.branch
+      };
+    } else {
+      showToast('Authentication Failed', 'Incorrect email or password. Please try again.', 'error');
+      passwordInput.closest('.form-group').classList.add('invalid');
+      if (pwdError) pwdError.textContent = 'Incorrect password.';
+      return;
+    }
   }
 
   localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
   updateAuthUI();
-  showToast('Login Successful', `Welcome, ${currentUser.name}! Redirecting to dashboard.`, 'success');
-  switchView('admin');
+  
+  if (currentUser.role === 'admin' || currentUser.role === 'staff') {
+    showToast('Login Successful', `Welcome, ${currentUser.name}! Redirecting to dashboard.`, 'success');
+    switchView('admin');
+  } else {
+    showToast('Login Successful', `Welcome, ${currentUser.name}!`, 'success');
+    switchView('overview');
+  }
+}
+
+function handleSignupSubmit(e) {
+  e.preventDefault();
+  
+  const form = e.target;
+  const name = form.name.value.trim();
+  const email = form.email.value.trim().toLowerCase();
+  const password = form.password.value;
+  const year = form.year.value;
+  const branch = form.branch.value;
+  
+  if (!email.endsWith('@snsct.org')) {
+    showToast('Sign Up Failed', 'You must use an @snsct.org email address.', 'error');
+    document.getElementById('signup-email').closest('.form-group').classList.add('invalid');
+    return;
+  }
+  
+  const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+  
+  if (registeredUsers.some(u => u.email === email)) {
+    showToast('Sign Up Failed', 'An account with this email already exists.', 'error');
+    return;
+  }
+  
+  registeredUsers.push({ name, email, password, year, branch });
+  localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+  
+  currentUser = {
+    email,
+    name,
+    id: 'STUDENT',
+    role: 'student',
+    year,
+    branch
+  };
+  
+  localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
+  updateAuthUI();
+  showToast('Account Created', `Welcome to ClubSphere, ${name}!`, 'success');
+  switchView('overview');
 }
 
 // ==========================================
@@ -1911,6 +1971,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Login form submit
   loginForm.addEventListener('submit', handleLoginSubmit);
+  
+  const signupForm = document.getElementById('signup-form');
+  if (signupForm) {
+    signupForm.addEventListener('submit', handleSignupSubmit);
+  }
+
+  const showSignupBtn = document.getElementById('show-signup-btn');
+  const showLoginBtn = document.getElementById('show-login-btn');
+  if (showSignupBtn && showLoginBtn) {
+    showSignupBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      loginForm.style.display = 'none';
+      signupForm.style.display = 'block';
+    });
+    showLoginBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      signupForm.style.display = 'none';
+      loginForm.style.display = 'block';
+    });
+  }
 
   // Report form submit
   const reportForm = document.getElementById('report-upload-form');

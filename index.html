@@ -631,9 +631,60 @@
               <button type="submit" class="btn btn-primary btn-block">
                 Log In <i class="fa-solid fa-right-to-bracket"></i>
               </button>
+              <div style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+                <span style="color: var(--text-muted)">New Student?</span> 
+                <a href="#" id="show-signup-btn" style="color: var(--accent-teal); text-decoration: none; font-weight: 600;">Create Account</a>
+              </div>
             </form>
 
-            <div class="google-login-wrapper" style="margin-top: 1.5rem; display: flex; justify-content: center; flex-direction: column; align-items: center; gap: 10px;">
+            <form id="signup-form" novalidate style="display: none;">
+              <div class="form-group">
+                <label class="form-label" for="signup-name">Full Name <span class="required-star">*</span></label>
+                <input type="text" id="signup-name" name="name" placeholder="Alex Rivera" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="signup-email">Email Address (@snsct.org only) <span class="required-star">*</span></label>
+                <input type="email" id="signup-email" name="email" placeholder="e.g., student.cse.2025@snsct.org" required />
+                <span class="error-msg" id="signup-email-error">Must be an @snsct.org email.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="signup-password">Password <span class="required-star">*</span></label>
+                <input type="password" id="signup-password" name="password" placeholder="••••••••" required />
+              </div>
+              <div class="form-row">
+                <div class="form-group col-6">
+                  <label class="form-label" for="signup-year">Year of Study <span class="required-star">*</span></label>
+                  <select id="signup-year" name="year" required>
+                    <option value="" disabled selected>Select Year</option>
+                    <option value="First Year">First Year</option>
+                    <option value="Second Year">Second Year</option>
+                    <option value="Third Year">Third Year</option>
+                    <option value="Fourth Year">Fourth Year</option>
+                  </select>
+                </div>
+                <div class="form-group col-6">
+                  <label class="form-label" for="signup-branch">Department <span class="required-star">*</span></label>
+                  <select id="signup-branch" name="branch" required>
+                    <option value="" disabled selected>Select Dept</option>
+                    <option value="CSE">CSE</option>
+                    <option value="ECE">ECE</option>
+                    <option value="MECH">MECH</option>
+                    <option value="CIVIL">CIVIL</option>
+                    <option value="EEE">EEE</option>
+                    <option value="IT">IT</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">
+                Create Account <i class="fa-solid fa-user-plus"></i>
+              </button>
+              <div style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+                <span style="color: var(--text-muted)">Already have an account?</span> 
+                <a href="#" id="show-login-btn" style="color: var(--accent-teal); text-decoration: none; font-weight: 600;">Log In</a>
+              </div>
+            </form>
+
+            <div class="google-login-wrapper" id="google-login-section" style="margin-top: 1.5rem; display: flex; justify-content: center; flex-direction: column; align-items: center; gap: 10px;">
               <div class="auth-divider" style="display: flex; align-items: center; width: 100%; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">
                 <hr style="flex: 1; border-color: rgba(255,255,255,0.1);">
                 <span style="padding: 0 10px;">OR</span>
@@ -654,7 +705,7 @@
               </div>
             </div>
 
-            <div class="auth-footer">
+            <div class="auth-footer" id="auth-footer-section">
               <div class="test-credentials-box">
                 <strong>Staff Account Credentials:</strong>
                 <ul>
