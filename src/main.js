@@ -1062,7 +1062,7 @@ document.getElementById('download-ticket-btn').addEventListener('click', async (
 // ==========================================
 // A. ADMIN LOGIN HANDLER
 // ==========================================
-window.handleCredentialResponse = async function(response) {
+window._actualGoogleAuthHandler = async function(response) {
   try {
     const base64Url = response.credential.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');

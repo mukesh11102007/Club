@@ -13,6 +13,22 @@
     rel="stylesheet">
   <!-- FontAwesome for Premium Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script>
+    // Pre-define the callback to catch the token if Google loads before main.js
+    window.handleCredentialResponse = function(response) {
+      if (window._actualGoogleAuthHandler) {
+        window._actualGoogleAuthHandler(response);
+      } else {
+        // If main.js isn't ready yet, wait and try again
+        const checkInterval = setInterval(() => {
+          if (window._actualGoogleAuthHandler) {
+            clearInterval(checkInterval);
+            window._actualGoogleAuthHandler(response);
+          }
+        }, 100);
+      }
+    };
+  </script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
