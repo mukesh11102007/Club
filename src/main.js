@@ -1116,6 +1116,7 @@ window.handleCredentialResponse = async function(response) {
     }
   } catch(error) {
     console.error("Error decoding Google credential:", error);
+    alert("CRITICAL ERROR DURING LOGIN: " + error.message + "\nPlease take a screenshot of this.");
     showToast('Authentication Failed', 'Invalid Google token or network error.', 'error');
   }
 };
