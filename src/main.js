@@ -193,16 +193,25 @@ function updateAuthUI() {
     authLoggedOut.style.display = 'none';
     authLoggedIn.style.display = 'block';
 
+    const adminDashboardBtn = document.getElementById('dropdown-admin-dashboard-btn');
     if (currentUser.role === 'admin') {
       navUserAvatar.textContent = '🛡';
       navUserName.textContent = 'Admin';
       dropdownFullName.textContent = currentUser.name;
       dropdownStudentId.textContent = 'System Administrator';
-    } else {
+      if (adminDashboardBtn) adminDashboardBtn.style.display = 'block';
+    } else if (currentUser.role === 'staff') {
       navUserAvatar.textContent = '👤';
       navUserName.textContent = 'Staff';
       dropdownFullName.textContent = currentUser.name;
       dropdownStudentId.textContent = 'Club Coordinator';
+      if (adminDashboardBtn) adminDashboardBtn.style.display = 'block';
+    } else {
+      navUserAvatar.textContent = '🎓';
+      navUserName.textContent = 'Student';
+      dropdownFullName.textContent = currentUser.name;
+      dropdownStudentId.textContent = 'Registered Student';
+      if (adminDashboardBtn) adminDashboardBtn.style.display = 'none';
     }
     dropdownEmail.textContent = currentUser.email;
   } else {
