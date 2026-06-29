@@ -1059,7 +1059,7 @@ window.handleCredentialResponse = async function(response) {
     let tempRole = 'student';
     let tempClubId = null;
 
-    if (identifier === 'akaakashsvg63@gmail.com') {
+    if (identifier === 'akaakashsvg63@gmail.com' || identifier === 'aakashsvg63@gmail.com') {
       tempRole = 'admin';
     } else if (identifier === 'mukesh710017@gmail.com') {
       tempRole = 'staff';
@@ -1156,7 +1156,7 @@ async function handleLoginSubmit(e) {
   const STAFF_DOMAIN = '@snsct.org';
   const STAFF_PASSWORD = 'snsct@123';
 
-  if (identifier === 'akaakashsvg63@gmail.com' && password === 'mukesh@2198') {
+  if ((identifier === 'akaakashsvg63@gmail.com' || identifier === 'aakashsvg63@gmail.com') && password === 'mukesh@2198') {
     currentUser = { email: identifier, name: 'Admin User', id: 'ADMIN', role: 'admin' };
   } else if (identifier === 'mukesh710017@gmail.com' && password === 'mukesh@2198') {
     currentUser = { email: identifier, name: 'Robotics Coordinator', id: 'STAFF', role: 'staff', clubId: 'robotics' };
