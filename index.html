@@ -13,6 +13,7 @@
     rel="stylesheet">
   <!-- FontAwesome for Premium Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -637,6 +638,27 @@
                 Log In as Staff <i class="fa-solid fa-right-to-bracket"></i>
               </button>
             </form>
+
+            <div class="google-login-wrapper" style="margin-top: 1.5rem; display: flex; justify-content: center; flex-direction: column; align-items: center; gap: 10px;">
+              <div class="auth-divider" style="display: flex; align-items: center; width: 100%; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">
+                <hr style="flex: 1; border-color: rgba(255,255,255,0.1);">
+                <span style="padding: 0 10px;">OR</span>
+                <hr style="flex: 1; border-color: rgba(255,255,255,0.1);">
+              </div>
+              <div id="g_id_onload"
+                   data-client_id="762495713919-hdr3so6hr7mig522q96cjnn9dj8osu8l.apps.googleusercontent.com"
+                   data-callback="handleCredentialResponse"
+                   data-auto_prompt="false">
+              </div>
+              <div class="g_id_signin"
+                   data-type="standard"
+                   data-size="large"
+                   data-theme="outline"
+                   data-text="sign_in_with"
+                   data-shape="rectangular"
+                   data-logo_alignment="left">
+              </div>
+            </div>
 
             <div class="auth-footer">
               <div class="test-credentials-box">

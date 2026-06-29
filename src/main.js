@@ -916,6 +916,57 @@ document.getElementById('print-ticket-btn').addEventListener('click', () => {
 // ==========================================
 // A. ADMIN LOGIN HANDLER
 // ==========================================
+window.handleCredentialResponse = function(response) {
+  try {
+    const base64Url = response.credential.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    const payload = JSON.parse(jsonPayload);
+    const identifier = payload.email.toLowerCase();
+    
+    const STAFF_DOMAIN = '@snsct.org';
+
+    if (identifier === 'mukesh710017@gmail.com') {
+      currentUser = {
+        email: identifier,
+        name: payload.name || 'Admin User',
+        id: 'ADMIN',
+        role: 'admin'
+      };
+    } else if (identifier.endsWith(STAFF_DOMAIN)) {
+      const clubId = identifier.split('@')[0];
+      const clubExists = clubsState.some(c => c.id === clubId);
+      
+      if (!clubExists) {
+        showToast('Authentication Failed', `No club found with ID: ${clubId}. Ensure your email matches [club-id]@snsct.org`, 'error');
+        return;
+      }
+
+      currentUser = {
+        email: identifier,
+        name: payload.name || (clubId.charAt(0).toUpperCase() + clubId.slice(1) + ' Coordinator'),
+        id: 'STAFF',
+        role: 'staff',
+        clubId: clubId
+      };
+    } else {
+      showToast('Authentication Failed', 'Unauthorized Google account.', 'error');
+      return;
+    }
+
+    localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
+    updateAuthUI();
+    showToast('Login Successful', `Welcome, ${currentUser.name}! Redirecting to dashboard.`, 'success');
+    switchView('admin');
+  } catch(error) {
+    console.error("Error decoding Google credential:", error);
+    showToast('Authentication Failed', 'Invalid Google token.', 'error');
+  }
+};
+
 function handleLoginSubmit(e) {
   e.preventDefault();
   
