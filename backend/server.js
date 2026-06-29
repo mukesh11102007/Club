@@ -247,6 +247,20 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { email, name, role } = req.body;
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = new User({ email, name, password: 'google-oauth', role: role || 'student' });
+      await user.save();
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

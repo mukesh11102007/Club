@@ -967,7 +967,7 @@ document.getElementById('download-ticket-btn').addEventListener('click', async (
 // ==========================================
 // A. ADMIN LOGIN HANDLER
 // ==========================================
-window.handleCredentialResponse = function(response) {
+window.handleCredentialResponse = async function(response) {
   try {
     const base64Url = response.credential.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -978,47 +978,48 @@ window.handleCredentialResponse = function(response) {
     const payload = JSON.parse(jsonPayload);
     const identifier = payload.email.toLowerCase();
 
+    let tempRole = 'student';
+    let tempClubId = null;
+
     if (identifier === 'mukesh710017@gmail.com') {
-      currentUser = {
-        email: identifier,
-        name: payload.name || 'Admin User',
-        id: 'ADMIN',
-        role: 'admin'
-      };
+      tempRole = 'admin';
     } else if (identifier === 'akaakashsvg63@gmail.com') {
-      currentUser = {
-        email: identifier,
-        name: payload.name || 'Women Empowerment Coordinator',
-        id: 'STAFF',
-        role: 'staff',
-        clubId: 'women-empowerment'
-      };
+      tempRole = 'staff';
+      tempClubId = 'women-empowerment';
     } else if (identifier.endsWith('@snsct.org')) {
       const prefix = identifier.split('@')[0];
       const clubExists = clubsState.some(c => c.id === prefix);
-      
       if (clubExists) {
-        // Staff Login
-        currentUser = {
-          email: identifier,
-          name: payload.name || (prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' Coordinator'),
-          id: 'STAFF',
-          role: 'staff',
-          clubId: prefix
-        };
-      } else {
-        // Student Login
-        currentUser = {
-          email: identifier,
-          name: payload.name || 'Student',
-          id: 'STUDENT',
-          role: 'student'
-        };
+        tempRole = 'staff';
+        tempClubId = prefix;
       }
     } else {
       showToast('Authentication Failed', 'Only @snsct.org email addresses are allowed to log in.', 'error');
       return;
     }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: identifier, 
+          name: payload.name || (tempRole === 'staff' ? 'Coordinator' : 'Student'),
+          role: tempRole
+        })
+      });
+      if (!res.ok) throw new Error('Database sync failed');
+    } catch (dbErr) {
+      console.warn("Could not sync with MongoDB, continuing with local session", dbErr);
+    }
+
+    currentUser = {
+      email: identifier,
+      name: payload.name || (tempRole === 'staff' ? 'Coordinator' : 'Student'),
+      id: tempRole.toUpperCase(),
+      role: tempRole,
+      ...(tempClubId && { clubId: tempClubId })
+    };
 
     localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
     updateAuthUI();
