@@ -101,10 +101,10 @@ app.post('/api/bookings', async (req, res) => {
       return res.status(409).json({ error: 'Conflict: No slots remaining' });
     }
 
-    // Check duplicate
-    const existing = await Booking.findOne({ clubId: bookingDetails.clubId, studentEmail: bookingDetails.studentEmail });
+    // Check duplicate (One club per student)
+    const existing = await Booking.findOne({ studentEmail: bookingDetails.studentEmail });
     if (existing) {
-      return res.status(400).json({ error: 'Duplicate booking' });
+      return res.status(400).json({ error: 'Duplicate booking: You are already registered for a club.' });
     }
 
     // Decrement slots

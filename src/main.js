@@ -180,6 +180,12 @@ async function initDatabase() {
       console.error(e);
     }
   }
+
+  if (!currentUser) {
+    switchView('login');
+  } else if (views.login.classList.contains('active')) {
+    switchView('overview');
+  }
 }
 
 function updateAuthUI() {
@@ -247,10 +253,15 @@ function updateAggregateCounters() {
 // 3. SPA VIEW ROUTER
 // ==========================================
 function switchView(viewName) {
-  // Guard admin view — only admin can access
-  if (viewName === 'admin' && !currentUser) {
+  if (!currentUser && viewName !== 'login') {
     switchView('login');
-    showToast("Admin Access Required", "Please log in with admin credentials to access the dashboard.", "info");
+    showToast("Login Required", "Please log in to the portal to access clubs.", "info");
+    return;
+  }
+  // Guard admin view - only staff/admin can access
+  if (viewName === 'admin' && (!currentUser || currentUser.role === 'student')) {
+    switchView('overview');
+    showToast("Access Denied", "You do not have staff/admin privileges.", "error");
     return;
   }
 
@@ -729,8 +740,8 @@ async function executeTransaction(details) {
         club.slotsRemaining = 0;
         renderOverviewGrid();
         updateBookingPageView(selectedClubId);
-      } else if (res.status === 400 && errorData.error === 'Duplicate booking') {
-        showToast("Duplicate Booking", `You have already registered for a membership slot in ${club.name}.`, "error");
+      } else if (res.status === 400 && errorData.error && errorData.error.startsWith('Duplicate booking')) {
+        showToast("Registration Limited", "You are already registered for a club. Students can only join one club.", "error");
       } else {
         showToast("Error", errorData.error || "An error occurred during booking.", "error");
       }
@@ -992,14 +1003,23 @@ window.handleCredentialResponse = function(response) {
         clubId: clubId
       };
     } else {
-      showToast('Authentication Failed', `Unauthorized Google account: ${identifier}`, 'error');
-      return;
+      currentUser = {
+        email: identifier,
+        name: payload.name || 'Student',
+        id: 'STUDENT',
+        role: 'student'
+      };
     }
 
     localStorage.setItem(USER_SESSION_KEY, JSON.stringify(currentUser));
     updateAuthUI();
-    showToast('Login Successful', `Welcome, ${currentUser.name}! Redirecting to dashboard.`, 'success');
-    switchView('admin');
+    showToast('Login Successful', `Welcome, ${currentUser.name}!`, 'success');
+    
+    if (currentUser.role === 'admin' || currentUser.role === 'staff') {
+      switchView('admin');
+    } else {
+      switchView('overview');
+    }
   } catch(error) {
     console.error("Error decoding Google credential:", error);
     showToast('Authentication Failed', 'Invalid Google token.', 'error');
