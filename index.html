@@ -571,15 +571,10 @@
               <!-- Dotted Barcode Divider -->
               <div class="barcode-divider"></div>
 
-              <!-- Ticket Barcode Footer -->
-              <div class="ticket-barcode-section">
-                <div class="barcode-lines">
-                  <span></span><span></span><span></span><span></span><span></span><span></span>
-                  <span></span><span></span><span></span><span></span><span></span><span></span>
-                  <span></span><span></span><span></span><span></span><span></span><span></span>
-                  <span></span><span></span><span></span><span></span><span></span><span></span>
-                </div>
-                <div class="barcode-number" id="ticket-barcode-num">CS4528399ROBOTICS</div>
+              <!-- Ticket Reg Number Footer -->
+              <div class="ticket-barcode-section" style="justify-content: center; text-align: center; padding: 20px 0;">
+                <div style="font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">Registration Number</div>
+                <div class="barcode-number" id="ticket-reg-num" style="font-size: 24px; font-weight: 700; color: var(--text-primary); letter-spacing: 4px;"></div>
               </div>
 
             </div>
@@ -590,8 +585,8 @@
             <button id="ticket-back-btn" class="btn btn-outline" style="display: none; border-color: var(--accent-teal); color: var(--accent-teal); margin-right: 0.5rem;">
               <i class="fa-solid fa-arrow-left"></i> Back
             </button>
-            <button id="print-ticket-btn" class="btn btn-secondary">
-              <i class="fa-solid fa-print"></i> Print Ticket
+            <button id="download-ticket-btn" class="btn btn-secondary">
+              <i class="fa-solid fa-download"></i> Download Ticket
             </button>
             <button id="conf-back-btn" class="btn btn-primary">
               <i class="fa-solid fa-house"></i> Return to Clubs

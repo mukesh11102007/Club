@@ -2,6 +2,7 @@ import { CLUBS_DATA } from './data/clubs.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
 
 // ==========================================
 // 1. STATE INITIALIZATION
@@ -86,7 +87,7 @@ const ticketStudentEmail = document.getElementById('ticket-student-email');
 const ticketStudentPhone = document.getElementById('ticket-student-phone');
 const ticketBookingId = document.getElementById('ticket-booking-id');
 const ticketBookingTime = document.getElementById('ticket-booking-time');
-const ticketBarcodeNum = document.getElementById('ticket-barcode-num');
+const ticketRegNum = document.getElementById('ticket-reg-num');
 const ticketHeaderGradient = document.getElementById('ticket-header-gradient');
 
 // Loader & Toast
@@ -761,7 +762,7 @@ function renderTicket(details, club, bookingId, timeStr) {
 
   ticketBookingId.textContent = bookingId;
   ticketBookingTime.textContent = timeStr;
-  ticketBarcodeNum.textContent = bookingId.replace(/-/g, '');
+  ticketRegNum.textContent = details.id;
 }
 
 // ==========================================
@@ -906,9 +907,38 @@ fillSlotsBtn.addEventListener('click', () => resetAllSlots(false));
 
 toastCloseBtn.addEventListener('click', hideToast);
 
-// Print Ticket function
-document.getElementById('print-ticket-btn').addEventListener('click', () => {
-  window.print();
+// Download Ticket function
+document.getElementById('download-ticket-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('download-ticket-btn');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Downloading...`;
+  btn.disabled = true;
+
+  try {
+    const ticketElement = document.querySelector('.digital-ticket');
+    const canvas = await html2canvas(ticketElement, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#0a0a0f'
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const ratio = canvas.width / canvas.height;
+    const imgWidth = pdfWidth - 20;
+    const imgHeight = imgWidth / ratio;
+    
+    pdf.addImage(imgData, 'PNG', 10, 20, imgWidth, imgHeight);
+    pdf.save(`ClubSphere-Ticket-${document.getElementById('ticket-booking-id').textContent}.pdf`);
+  } catch (err) {
+    console.error('Error generating PDF:', err);
+    showToast('Download Error', 'Could not generate the ticket PDF.', 'error');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
 });
 
 // ==========================================
